@@ -2,5 +2,6 @@
   "eslint.workingDirectories": [
     { "pattern": "frontend/apps/*" },
     { "pattern": "frontend/packages/*" }
-  ]
+  ],
+  "python-envs.defaultEnvManager": "ms-python.python:system"
 }

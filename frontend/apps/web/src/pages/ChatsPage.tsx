@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { IconArrowLeft } from '../lib/icons'
-import { fetchMessagesFor, groupIntoConversations, type Conversation } from '../lib/messages'
+import {
+  fetchMessagesFor,
+  groupIntoConversations,
+  subscribeToUnreadChanges,
+  type Conversation,
+} from '../lib/messages'
 import { fetchMyProfile } from '../lib/profiles'
 import type { ProfileRow } from '../lib/types'
 
@@ -24,19 +29,24 @@ export function ChatsPage() {
 
   useEffect(() => {
     if (!user) return
-    void fetchMessagesFor(user.id).then(async (messages) => {
-      const grouped = groupIntoConversations(user.id, messages)
-      setConversations(grouped)
 
-      const entries = await Promise.all(
-        grouped.map(async (c) => [c.otherUserId, await fetchMyProfile(c.otherUserId)] as const),
-      )
-      const map = new Map<string, ProfileRow>()
-      for (const [id, profile] of entries) {
-        if (profile) map.set(id, profile)
-      }
-      setProfiles(map)
-    })
+    const load = () =>
+      void fetchMessagesFor(user.id).then(async (messages) => {
+        const grouped = groupIntoConversations(user.id, messages)
+        setConversations(grouped)
+
+        const entries = await Promise.all(
+          grouped.map(async (c) => [c.otherUserId, await fetchMyProfile(c.otherUserId)] as const),
+        )
+        const map = new Map<string, ProfileRow>()
+        for (const [id, profile] of entries) {
+          if (profile) map.set(id, profile)
+        }
+        setProfiles(map)
+      })
+
+    load()
+    return subscribeToUnreadChanges(user.id, load)
   }, [user])
 
   return (
@@ -65,11 +75,17 @@ export function ChatsPage() {
               <div className="chat-meta">
                 <div className="top-line">
                   <span className="cname">{name}</span>
-                  <span className="time">{formatTime(c.lastMessage.created_at)}</span>
                 </div>
                 <div className="preview">{c.lastMessage.body}</div>
               </div>
-              {c.waitingForReply && <div className="waiting-badge">Waiting for reply</div>}
+              <div className="chat-right">
+                <span className="time">{formatTime(c.lastMessage.created_at)}</span>
+                {c.unreadCount > 0 ? (
+                  <span className="chat-unread-badge">{c.unreadCount}</span>
+                ) : (
+                  c.waitingForReply && <span className="waiting-badge">Waiting for reply</span>
+                )}
+              </div>
             </div>
           )
         })}

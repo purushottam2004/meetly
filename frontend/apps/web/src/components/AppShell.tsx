@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { IconChat, IconProfile } from '../lib/icons'
-import { countUnreadMessages, subscribeToUnreadChanges } from '../lib/messages'
+import { countUnreadChats, subscribeToUnreadChanges } from '../lib/messages'
 import {
   fetchMyProfile,
   requestBrowserLocation,
@@ -38,7 +38,7 @@ export function AppShell() {
 
   useEffect(() => {
     if (!user) return
-    const refresh = () => void countUnreadMessages(user.id).then(setRawUnreadCount)
+    const refresh = () => void countUnreadChats(user.id).then(setRawUnreadCount)
     refresh()
     return subscribeToUnreadChanges(user.id, refresh)
   }, [user])

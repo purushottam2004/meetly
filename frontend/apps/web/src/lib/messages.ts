@@ -6,6 +6,7 @@ export type Conversation = {
   messages: MessageRow[]
   lastMessage: MessageRow
   waitingForReply: boolean
+  unreadCount: number
 }
 
 export async function fetchMessagesFor(userId: string): Promise<MessageRow[]> {
@@ -38,6 +39,7 @@ export function groupIntoConversations(userId: string, messages: MessageRow[]): 
       messages: sorted,
       lastMessage,
       waitingForReply: lastMessage.sender_id === userId,
+      unreadCount: sorted.filter((m) => m.recipient_id === userId && !m.is_seen).length,
     }
   })
 
@@ -79,14 +81,15 @@ export async function sendMessage(
   return data
 }
 
-export async function countUnreadMessages(userId: string): Promise<number> {
-  const { count, error } = await supabase
+/** How many distinct conversations have unseen messages (not how many messages). */
+export async function countUnreadChats(userId: string): Promise<number> {
+  const { data, error } = await supabase
     .from('messages')
-    .select('id', { count: 'exact', head: true })
+    .select('sender_id')
     .eq('recipient_id', userId)
     .eq('is_seen', false)
   if (error) throw error
-  return count ?? 0
+  return new Set((data ?? []).map((m) => m.sender_id)).size
 }
 
 /** Marks every not-yet-seen message from `otherUserId` to `userId` as seen. */
