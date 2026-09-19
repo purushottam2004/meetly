@@ -1,5 +1,8 @@
+import { compressImage, PROFILE_PHOTO_COMPRESS } from './compressImage'
 import { supabase } from './supabaseClient'
 import type { ProfileItemKind, ProfileItemRow, ProfileRow, SwipeDirection } from './types'
+
+export type ProfilePhotoKind = keyof typeof PROFILE_PHOTO_COMPRESS
 
 export async function fetchMyProfile(userId: string): Promise<ProfileRow | null> {
   const { data, error } = await supabase.from('users').select('*').eq('id', userId).maybeSingle()
@@ -77,12 +80,18 @@ export async function saveMyLocation(
   if (error) throw error
 }
 
-export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
-  const ext = file.name.split('.').pop() || 'jpg'
+/** Compresses in the browser, then stores under `{userId}/{uuid}.{ext}` in the public `profile-photos` bucket. */
+export async function uploadProfilePhoto(
+  userId: string,
+  file: File,
+  kind: ProfilePhotoKind = 'gallery',
+): Promise<string> {
+  const compressed = await compressImage(file, PROFILE_PHOTO_COMPRESS[kind])
+  const ext = compressed.type === 'image/jpeg' ? 'jpg' : compressed.name.split('.').pop() || 'jpg'
   const path = `${userId}/${crypto.randomUUID()}.${ext}`
   const { error } = await supabase.storage
     .from('profile-photos')
-    .upload(path, file, { contentType: file.type || undefined })
+    .upload(path, compressed, { contentType: compressed.type || undefined })
   if (error) throw error
   return supabase.storage.from('profile-photos').getPublicUrl(path).data.publicUrl
 }

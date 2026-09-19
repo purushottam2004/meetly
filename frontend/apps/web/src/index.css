@@ -635,7 +635,7 @@ input.input-box:focus { outline: none; border-color: var(--primary); }
   min-height: 160px; border-radius: var(--radius-sm); overflow: hidden;
   background: linear-gradient(160deg, #DCE6FA, #EDE3F5);
   display: flex; align-items: center; justify-content: center; color: rgba(43,38,32,0.35);
-  cursor: pointer;
+  cursor: pointer; position: relative;
 }
 .profile-item .item-photo:has(img) { min-height: 0; display: block; }
 .profile-item .item-photo img {

@@ -33,6 +33,8 @@ export function ProfilePage() {
   const [editingHeader, setEditingHeader] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [uploadingPhotoItemId, setUploadingPhotoItemId] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [pendingPhotoItemId, setPendingPhotoItemId] = useState<string | null>(null)
@@ -68,10 +70,13 @@ export function ProfilePage() {
   async function handleAvatarChosen(file: File) {
     if (!user) return
     setUploadingAvatar(true)
+    setUploadError(null)
     try {
-      const url = await uploadProfilePhoto(user.id, file)
+      const url = await uploadProfilePhoto(user.id, file, 'avatar')
       await saveMyAvatar(user.id, url)
       setProfile(await fetchMyProfile(user.id))
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not upload photo')
     } finally {
       setUploadingAvatar(false)
     }
@@ -79,9 +84,17 @@ export function ProfilePage() {
 
   async function handleItemPhotoChosen(itemId: string, file: File) {
     if (!user) return
-    const url = await uploadProfilePhoto(user.id, file)
-    await updateProfileItem(itemId, { photo_url: url })
-    setItems(await fetchProfileItems(user.id))
+    setUploadingPhotoItemId(itemId)
+    setUploadError(null)
+    try {
+      const url = await uploadProfilePhoto(user.id, file, 'gallery')
+      await updateProfileItem(itemId, { photo_url: url })
+      setItems(await fetchProfileItems(user.id))
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not upload photo')
+    } finally {
+      setUploadingPhotoItemId(null)
+    }
   }
 
   async function addItem(kind: 'photo' | 'text') {
@@ -179,6 +192,10 @@ export function ProfilePage() {
         />
       </div>
 
+      {uploadError && (
+        <p style={{ color: 'var(--danger)', fontSize: 13, margin: '12px 0 0' }}>{uploadError}</p>
+      )}
+
       <div id="profileItemsList" style={{ marginTop: 14 }}>
         {items.map((item, index) => (
           <div className="profile-item" key={item.id}>
@@ -217,11 +234,15 @@ export function ProfilePage() {
                 <div
                   className="item-photo"
                   onClick={() => {
+                    if (uploadingPhotoItemId) return
                     setPendingPhotoItemId(item.id)
                     photoInputRef.current?.click()
                   }}
                 >
                   {item.photo_url ? <img src={item.photo_url} alt="" /> : <IconCamera />}
+                  {uploadingPhotoItemId === item.id && (
+                    <div className="change-photo-btn">Uploading…</div>
+                  )}
                 </div>
               ) : editingItemId === item.id ? (
                 <textarea
