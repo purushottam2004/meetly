@@ -51,6 +51,23 @@ export async function saveMyProfileHeader(userId: string, fields: ProfileHeaderF
   if (error) throw error
 }
 
+/** "Activate Profile" toggle — off by default; only active profiles show up in Discover. */
+export async function saveMyActiveState(userId: string, isActive: boolean): Promise<void> {
+  const { error } = await supabase.from('users').update({ is_active: isActive }).eq('id', userId)
+  if (error) throw error
+}
+
+/** Triggers the browser's native location permission prompt (silent once granted). */
+export function requestBrowserLocation(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not available in this browser'))
+      return
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject)
+  })
+}
+
 export async function saveMyLocation(
   userId: string,
   fields: { location_text: string; latitude: number; longitude: number },

@@ -49,6 +49,7 @@ def _auth_user(
     latitude: float,
     longitude: float,
     hours_since_active: float = 0,
+    is_active: bool = True,
 ) -> dict:
     return {
         "id": user_id,
@@ -64,6 +65,10 @@ def _auth_user(
             "latitude": latitude,
             "longitude": longitude,
             "hours_since_active": hours_since_active,
+            # The "Activate Profile" toggle defaults to off for real signups;
+            # seed users are active so Discover has something to show out of
+            # the box.
+            "is_active": is_active,
         },
     }
 

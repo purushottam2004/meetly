@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { IconArrowLeft, IconCamera, IconLightbulb, IconSend } from '../lib/icons'
-import { fetchThread, sendMessage, subscribeToThread } from '../lib/messages'
+import { fetchThread, markThreadSeen, sendMessage, subscribeToThread } from '../lib/messages'
 import { fetchMyProfile } from '../lib/profiles'
 import type { MessageRow, ProfileRow } from '../lib/types'
 
@@ -34,9 +34,15 @@ export function ChatDetailPage() {
 
   useEffect(() => {
     if (!user || !otherUserId) return
-    void fetchThread(user.id, otherUserId).then(setMessages)
+    void fetchThread(user.id, otherUserId).then((thread) => {
+      setMessages(thread)
+      void markThreadSeen(user.id, otherUserId)
+    })
     return subscribeToThread(user.id, otherUserId, (message) => {
       setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]))
+      if (message.recipient_id === user.id) {
+        void markThreadSeen(user.id, otherUserId)
+      }
     })
   }, [user, otherUserId])
 

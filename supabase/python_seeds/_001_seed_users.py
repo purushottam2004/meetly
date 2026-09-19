@@ -45,6 +45,7 @@ def seed_users():
                 "latitude": profile.get("latitude"),
                 "longitude": profile.get("longitude"),
                 "last_active_at": last_active_at,
+                "is_active": profile.get("is_active"),
             }.items()
             if value is not None
         }

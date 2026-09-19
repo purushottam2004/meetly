@@ -7,6 +7,7 @@ import {
   fetchMyProfile,
   fetchProfileItems,
   reorderProfileItems,
+  saveMyActiveState,
   saveMyAvatar,
   saveMyProfileHeader,
   updateProfileItem,
@@ -116,6 +117,13 @@ export function ProfilePage() {
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, body } : item)))
   }
 
+  async function toggleActive() {
+    if (!user || !profile) return
+    const nextActive = !profile.is_active
+    setProfile({ ...profile, is_active: nextActive })
+    await saveMyActiveState(user.id, nextActive)
+  }
+
   if (!profile) {
     return <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
   }
@@ -125,7 +133,15 @@ export function ProfilePage() {
       <div className="back-row" onClick={() => navigate('/')}>
         <IconArrowLeft /> Back to Discover
       </div>
-      <div className="screen-title">Your profile</div>
+      <div className="screen-title-row">
+        <div className="screen-title">Your profile</div>
+        <label className="toggle-row">
+          <span>Activate Profile</span>
+          <span className={`toggle-switch ${profile.is_active ? 'on' : ''}`} onClick={() => void toggleActive()}>
+            <span className="toggle-thumb" />
+          </span>
+        </label>
+      </div>
 
       <div id="profileHeader">
         {editingHeader ? (

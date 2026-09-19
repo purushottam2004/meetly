@@ -1,11 +1,9 @@
 import { useEffect } from 'react'
-import { LoginForm } from '@repo/auth'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { IconArrowLeft, IconGoogle } from '../lib/icons'
 import { resumeAfterAuth, type AuthFlowState } from '../lib/authFlow'
-import { fetchMyProfile } from '../lib/profiles'
 
 export function LoginPage() {
   const { user, loading } = useAuth()
@@ -13,21 +11,11 @@ export function LoginPage() {
   const routerLocation = useLocation()
   const state = routerLocation.state as AuthFlowState
 
+  // AppShell handles the location prompt once the session lands anywhere in
+  // the app, which is where the OAuth redirect drops the user.
   useEffect(() => {
     if (loading || !user) return
-
-    let cancelled = false
-    void fetchMyProfile(user.id).then((profile) => {
-      if (cancelled) return
-      if (profile && profile.latitude == null) {
-        navigate('/location', { replace: true, state })
-        return
-      }
-      resumeAfterAuth(navigate, state)
-    })
-    return () => {
-      cancelled = true
-    }
+    resumeAfterAuth(navigate, state)
   }, [loading, user, state, navigate])
 
   async function handleGoogleLogin() {
@@ -46,11 +34,6 @@ export function LoginPage() {
         <div className="google-btn" onClick={() => void handleGoogleLogin()}>
           <IconGoogle className="g-icon" />
           Continue with Google
-        </div>
-
-        <div style={{ marginTop: '28px', width: '100%', maxWidth: 280 }}>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>Or sign in with email</p>
-          <LoginForm client={supabase} />
         </div>
       </div>
     </div>

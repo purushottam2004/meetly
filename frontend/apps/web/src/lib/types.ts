@@ -12,6 +12,7 @@ export type ProfileRow = {
   instagram_url: string | null
   twitter_url: string | null
   last_active_at: string
+  is_active: boolean
   created_at: string
   updated_at: string
 }
@@ -36,6 +37,7 @@ export type MessageRow = {
   body: string
   quote_kind: ProfileItemKind | null
   quote_text: string | null
+  is_seen: boolean
   created_at: string
 }
 

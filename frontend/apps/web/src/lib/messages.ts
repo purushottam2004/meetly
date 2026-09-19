@@ -79,6 +79,43 @@ export async function sendMessage(
   return data
 }
 
+export async function countUnreadMessages(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('recipient_id', userId)
+    .eq('is_seen', false)
+  if (error) throw error
+  return count ?? 0
+}
+
+/** Marks every not-yet-seen message from `otherUserId` to `userId` as seen. */
+export async function markThreadSeen(userId: string, otherUserId: string): Promise<void> {
+  const { error } = await supabase
+    .from('messages')
+    .update({ is_seen: true })
+    .eq('recipient_id', userId)
+    .eq('sender_id', otherUserId)
+    .eq('is_seen', false)
+  if (error) throw error
+}
+
+/** Fires on any insert/update touching messages addressed to `userId` — used to keep the unread badge live. */
+export function subscribeToUnreadChanges(userId: string, onChange: () => void): () => void {
+  const channel = supabase
+    .channel(`unread:${userId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` },
+      onChange,
+    )
+    .subscribe()
+
+  return () => {
+    void supabase.removeChannel(channel)
+  }
+}
+
 /** Realtime subscription for a single thread; returns an unsubscribe function. */
 export function subscribeToThread(
   userId: string,
