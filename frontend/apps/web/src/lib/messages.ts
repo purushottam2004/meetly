@@ -103,10 +103,16 @@ export async function markThreadSeen(userId: string, otherUserId: string): Promi
   if (error) throw error
 }
 
+// supabase.channel() hands back the *existing* channel for a topic that is
+// already open, and binding to one after it has subscribed throws. Several
+// components watch unread state at once, so each subscription gets its own topic.
+let unreadChannelSeq = 0
+
 /** Fires on any insert/update touching messages addressed to `userId` — used to keep the unread badge live. */
 export function subscribeToUnreadChanges(userId: string, onChange: () => void): () => void {
+  unreadChannelSeq += 1
   const channel = supabase
-    .channel(`unread:${userId}`)
+    .channel(`unread:${userId}:${unreadChannelSeq}`)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` },
