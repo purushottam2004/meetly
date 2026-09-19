@@ -12,8 +12,7 @@ import {
   fetchProfileItems,
   recordSwipe,
 } from '../lib/profiles'
-import type { LatLng } from '../lib/staticMap'
-import type { ProfileItemRow, ProfileRow, Quote } from '../lib/types'
+import type { LatLng, ProfileItemRow, ProfileRow, Quote } from '../lib/types'
 import type { PendingCompose } from '../lib/authFlow'
 
 type ComposeState = { profile: ProfileRow; quote: Quote | null }

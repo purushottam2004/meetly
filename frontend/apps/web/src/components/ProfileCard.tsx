@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
-import type { ProfileItemRow, ProfileRow, Quote } from '../lib/types'
-import { buildStaticMapUrl, type LatLng } from '../lib/staticMap'
+import type { LatLng, ProfileItemRow, ProfileRow, Quote } from '../lib/types'
 import { IconComment, IconPin } from '../lib/icons'
+import { MapBlock } from './MapBlock'
 import { SocialRow } from './SocialRow'
 
 type ProfileCardProps = {
@@ -33,7 +33,6 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
     profile.latitude != null && profile.longitude != null
       ? { lat: profile.latitude, lng: profile.longitude }
       : null
-  const mapUrl = profileLocation ? buildStaticMapUrl(profileLocation, myLocation) : null
 
   const itemsWithPhotoIndex = visibleItems.reduce<{ item: ProfileItemRow; photoIndex: number }[]>((acc, item) => {
     const previousIndex = acc.length > 0 ? acc[acc.length - 1].photoIndex : 1
@@ -94,19 +93,7 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
           <div className="location-line">
             <IconPin /> {profile.location_text}
           </div>
-          {mapUrl ? (
-            <div className="map-box">
-              <img
-                src={mapUrl}
-                alt={`Map showing ${profile.location_text}`}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
-          ) : (
-            <div className="map-box">
-              <div className="map-area" />
-            </div>
-          )}
+          {profileLocation && <MapBlock primary={profileLocation} secondary={myLocation} />}
         </div>
       )}
     </Fragment>

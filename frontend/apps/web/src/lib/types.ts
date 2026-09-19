@@ -55,3 +55,5 @@ export type Quote = {
   kind: ProfileItemKind
   text: string
 }
+
+export type LatLng = { lat: number; lng: number }

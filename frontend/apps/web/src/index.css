@@ -296,21 +296,24 @@ body {
   height: 130px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background:
-    linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 22px 22px,
-    linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 22px 22px,
-    #F3EFE5;
+  background: #F3EFE5;
   overflow: hidden;
+  z-index: 0;
 }
-.map-area {
-  position: absolute;
-  width: 62%; height: 70%;
-  top: 50%; left: 46%;
-  transform: translate(-50%, -50%);
-  background: var(--primary);
-  opacity: 0.22;
-  border-radius: 58% 42% 55% 45% / 48% 55% 45% 52%;
+/* Leaflet pins: a coloured dot with a soft ring, instead of the bundled PNG. */
+.map-pin span {
+  display: block;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(43,38,32,0.45);
 }
+.map-box .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255,255,255,0.75);
+  padding: 0 4px;
+}
+.map-box .leaflet-control-attribution a { color: var(--text-soft); }
 
 .floating-actions {
   position: absolute;
