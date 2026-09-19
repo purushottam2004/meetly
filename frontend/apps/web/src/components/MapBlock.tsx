@@ -10,15 +10,18 @@ type MapBlockProps = {
   secondary?: LatLng | null
 }
 
-// Leaflet's default marker is a bundled PNG that breaks under bundlers; a
-// div-based pin also lets the markers carry the app's own colours.
-function pin(color: string) {
-  return L.divIcon({
-    className: 'map-pin',
-    html: `<span style="background:${color}"></span>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  })
+/** Nobody's exact address goes on the map — just the area they're in. */
+const PRIVACY_RADIUS_METRES = 500
+
+function area(map: L.Map, at: L.LatLngExpression, color: string) {
+  return L.circle(at, {
+    radius: PRIVACY_RADIUS_METRES,
+    color,
+    weight: 1.5,
+    opacity: 0.7,
+    fillColor: color,
+    fillOpacity: 0.18,
+  }).addTo(map)
 }
 
 export function MapBlock({ primary, secondary }: MapBlockProps) {
@@ -32,6 +35,10 @@ export function MapBlock({ primary, secondary }: MapBlockProps) {
     if (!container) return
 
     const map = L.map(container, {
+      // A view has to exist before any layer is added: circles project their
+      // radius to pixels on add, and throw without one.
+      center: [lat, lng],
+      zoom: 14,
       // Keep it a calm preview inside a scrollable card rather than a map the
       // user can wrestle with mid-swipe.
       dragging: false,
@@ -48,16 +55,13 @@ export function MapBlock({ primary, secondary }: MapBlockProps) {
       maxZoom: 19,
     }).addTo(map)
 
-    L.marker([lat, lng], { icon: pin('#3E63DD') }).addTo(map)
+    const theirs = area(map, [lat, lng], '#3E63DD')
 
     if (secondaryLat != null && secondaryLng != null) {
-      L.marker([secondaryLat, secondaryLng], { icon: pin('#D2694F') }).addTo(map)
-      map.fitBounds(L.latLngBounds([lat, lng], [secondaryLat, secondaryLng]), {
-        padding: [26, 26],
-        maxZoom: 14,
-      })
+      const mine = area(map, [secondaryLat, secondaryLng], '#D2694F')
+      map.fitBounds(theirs.getBounds().extend(mine.getBounds()), { padding: [14, 14], maxZoom: 15 })
     } else {
-      map.setView([lat, lng], 13)
+      map.fitBounds(theirs.getBounds(), { padding: [14, 14], maxZoom: 15 })
     }
 
     // The card mounts inside an animating container, so the map can measure

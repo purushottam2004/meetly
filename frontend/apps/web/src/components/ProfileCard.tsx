@@ -54,7 +54,7 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
           <span className="name">{name}</span>
           {profile.age != null && <span className="age">, {profile.age}</span>}
           {profile.headline && <div className="role">{profile.headline}</div>}
-          <SocialRow profile={profile} />
+          <SocialRow profile={profile} lastActiveAt={profile.last_active_at} />
         </div>
         <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: 'Main photo' })} />
       </div>

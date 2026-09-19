@@ -1,5 +1,6 @@
 import type { ProfileRow } from '../lib/types'
 import { IconInstagram, IconLinkedin, IconTwitter } from '../lib/icons'
+import { formatLastSeen } from '../lib/time'
 
 const SOCIAL_ICONS = {
   linkedin: IconLinkedin,
@@ -15,12 +16,19 @@ const SOCIAL_FIELDS: { key: keyof SocialLinks; icon: keyof typeof SOCIAL_ICONS }
   { key: 'twitter_url', icon: 'twitter' },
 ]
 
-export function SocialRow({ profile }: { profile: SocialLinks }) {
+export function SocialRow({
+  profile,
+  lastActiveAt,
+}: {
+  profile: SocialLinks
+  lastActiveAt?: string | null
+}) {
   const links = SOCIAL_FIELDS.filter((field) => profile[field.key])
-  if (links.length === 0) return null
+  if (links.length === 0 && !lastActiveAt) return null
 
   return (
     <div className="social-row">
+      {lastActiveAt && <span className="last-seen-badge">{formatLastSeen(lastActiveAt)}</span>}
       {links.map(({ key, icon }) => {
         const Icon = SOCIAL_ICONS[icon]
         return (

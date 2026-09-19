@@ -9,17 +9,8 @@ import {
   type Conversation,
 } from '../lib/messages'
 import { fetchMyProfile } from '../lib/profiles'
+import { formatRelativeTime } from '../lib/time'
 import type { ProfileRow } from '../lib/types'
-
-function formatTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime()
-  const minutes = Math.round(diffMs / 60000)
-  if (minutes < 1) return 'now'
-  if (minutes < 60) return `${minutes}m`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h`
-  return `${Math.round(hours / 24)}d`
-}
 
 export function ChatsPage() {
   const { user } = useAuth()
@@ -79,7 +70,7 @@ export function ChatsPage() {
                 <div className="preview">{c.lastMessage.body}</div>
               </div>
               <div className="chat-right">
-                <span className="time">{formatTime(c.lastMessage.created_at)}</span>
+                <span className="time">{formatRelativeTime(c.lastMessage.created_at)}</span>
                 {c.unreadCount > 0 ? (
                   <span className="chat-unread-badge">{c.unreadCount}</span>
                 ) : (
