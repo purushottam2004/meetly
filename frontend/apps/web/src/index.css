@@ -566,7 +566,7 @@ input.input-box:focus { outline: none; border-color: var(--primary); }
 }
 .header-edit-btn svg { width: 13px; height: 13px; }
 .header-photo-edit { position: relative; }
-.header-photo-edit .change-photo-btn {
+.change-photo-btn {
   position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 6px;
   background: rgba(255,255,255,0.92); backdrop-filter: blur(3px); color: var(--text);

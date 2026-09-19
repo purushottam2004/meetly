@@ -145,7 +145,13 @@ export function ProfilePage() {
 
       <div id="profileHeader">
         {editingHeader ? (
-          <ProfileHeaderEditor profile={profile} onCancel={() => setEditingHeader(false)} onSave={saveHeader} />
+          <ProfileHeaderEditor
+            profile={profile}
+            uploadingAvatar={uploadingAvatar}
+            onChangePhoto={() => avatarInputRef.current?.click()}
+            onCancel={() => setEditingHeader(false)}
+            onSave={saveHeader}
+          />
         ) : (
           <div className="profile-header-card">
             <div
@@ -159,9 +165,6 @@ export function ProfilePage() {
               <div className="name-overlay">
                 <span className="name">{profile.display_name || 'You'}</span>
                 <div className="role">{profile.headline || 'Add your role or headline'}</div>
-              </div>
-              <div className="change-photo-btn" onClick={() => avatarInputRef.current?.click()}>
-                <IconCamera /> {uploadingAvatar ? 'Uploading…' : 'Change photo'}
               </div>
             </div>
             <div className="header-edit-btn" onClick={() => setEditingHeader(true)}>
@@ -287,10 +290,14 @@ export function ProfilePage() {
 
 function ProfileHeaderEditor({
   profile,
+  uploadingAvatar,
+  onChangePhoto,
   onCancel,
   onSave,
 }: {
   profile: ProfileRow
+  uploadingAvatar: boolean
+  onChangePhoto: () => void
   onCancel: () => void
   onSave: (fields: {
     display_name: string
@@ -310,7 +317,22 @@ function ProfileHeaderEditor({
 
   return (
     <div className="profile-header-card">
-      <div className="photo-block first header-photo-edit photo-variant-0" />
+      <div
+        className="photo-block first header-photo-edit photo-variant-0"
+        style={
+          profile.avatar_url
+            ? {
+                backgroundImage: `url(${profile.avatar_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : undefined
+        }
+      >
+        <div className="change-photo-btn" onClick={onChangePhoto}>
+          <IconCamera /> {uploadingAvatar ? 'Uploading…' : 'Change photo'}
+        </div>
+      </div>
       <div className="profile-header-edit">
         <label>Name</label>
         <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
