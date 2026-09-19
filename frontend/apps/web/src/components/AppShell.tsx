@@ -20,12 +20,21 @@ export function AppShell() {
   const location = useLocation()
   const { user } = useAuth()
   const [rawUnreadCount, setRawUnreadCount] = useState(0)
+  const [rawAvatarUrl, setRawAvatarUrl] = useState<string | null>(null)
   const unreadCount = user ? rawUnreadCount : 0
+  const avatarUrl = user ? rawAvatarUrl : null
 
   useEffect(() => {
     if (!user) return
     void touchLastActive(user.id)
   }, [user])
+
+  // Re-read on navigation so a freshly uploaded photo shows up as soon as the
+  // user leaves the profile screen.
+  useEffect(() => {
+    if (!user) return
+    void fetchMyProfile(user.id).then((profile) => setRawAvatarUrl(profile?.avatar_url ?? null))
+  }, [user, location.pathname])
 
   useEffect(() => {
     if (!user) return
@@ -75,8 +84,17 @@ export function AppShell() {
   return (
     <div className="app">
       <div className="header" id="mainHeader">
-        <div className="icon-box avatar" onClick={() => goTo('/profile')} title="Profile & settings">
-          <IconProfile />
+        <div
+          className="icon-box avatar"
+          onClick={() => goTo('/profile')}
+          title="Profile & settings"
+          style={
+            avatarUrl
+              ? { backgroundImage: `url(${avatarUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : undefined
+          }
+        >
+          {!avatarUrl && <IconProfile />}
         </div>
         <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           meetly
