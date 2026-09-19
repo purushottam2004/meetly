@@ -1,12 +1,17 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthProvider'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { HomePage } from './pages/HomePage'
+import { AppShell } from './components/AppShell'
+import { DiscoverPage } from './pages/DiscoverPage'
 import { LoginPage } from './pages/LoginPage'
+import { LocationPage } from './pages/LocationPage'
+import { ChatsPage } from './pages/ChatsPage'
+import { ChatDetailPage } from './pages/ChatDetailPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 /**
- * All routes are protected by default via ProtectedRoute.
- * Only /login is public.
+ * Discover is public (matches the prototype's browsable swipe deck); signing
+ * in is only required for messaging, chats, profile editing, and location.
  */
 export default function App() {
   return (
@@ -15,9 +20,15 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+          <Route element={<AppShell />}>
+            <Route path="/" element={<DiscoverPage />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="/location" element={<LocationPage />} />
+              <Route path="/chats" element={<ChatsPage />} />
+              <Route path="/chats/:userId" element={<ChatDetailPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Route>
           </Route>
         </Routes>
       </AuthProvider>

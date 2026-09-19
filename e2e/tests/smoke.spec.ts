@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
  * This test verifies that:
  *   1. The frontend server is running and reachable.
  *   2. The page loads without crashing.
- *   3. Unauthenticated users are sent to /login.
+ *   3. Discover is browsable without signing in; Chats requires a session.
  *
  * Prerequisites:
  *   - Frontend running on BASE_URL / WEB2_BASE_URL (Playwright starts preview)
@@ -21,11 +21,22 @@ test.describe("Smoke Tests", () => {
     await expect(body).not.toBeEmpty();
   });
 
-  test("should redirect unauthenticated users to /login", async ({ page }) => {
+  test("should let unauthenticated users browse Discover", async ({
+    page,
+  }) => {
     await page.goto("/");
+
+    await expect(page).toHaveURL("/");
+    await expect(page.locator("#screen-discover")).toBeVisible();
+  });
+
+  test("should redirect unauthenticated users away from Chats", async ({
+    page,
+  }) => {
+    await page.goto("/chats");
 
     await page.waitForURL("**/login**");
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByText("Sign in to message people")).toBeVisible();
   });
 });

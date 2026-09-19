@@ -13,7 +13,7 @@ import {
  * Override with TEST_USER_EMAIL and TEST_USER_PASSWORD in e2e/.env.
  */
 test.describe("Login", () => {
-  test("should sign in with seeded email and reach the home page", async ({
+  test("should sign in with seeded email and reach Discover", async ({
     page,
   }) => {
     const { email, password } = testUserCredentials();
@@ -25,8 +25,12 @@ test.describe("Login", () => {
       timeout: 15_000,
     });
     await expect(page).toHaveURL("/");
-    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(page.locator("#screen-discover")).toBeVisible();
+
+    // Profile is only reachable once signed in; confirms the session stuck.
+    await page.goto("/profile");
+    await expect(page).toHaveURL("/profile");
+    await expect(page.getByText("Log out")).toBeVisible();
   });
 
   test("should stay on login after a wrong password", async ({ page }) => {

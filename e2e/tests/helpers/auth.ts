@@ -9,7 +9,7 @@ export function testUserCredentials() {
 /** Open the login page and wait for the email/password form. */
 export async function openEmailSignIn(page: Page) {
   await page.goto("/login");
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByText("Sign in to message people")).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
 }
 
@@ -32,9 +32,10 @@ export async function loginAs(page: Page, email: string, password: string) {
   });
 }
 
-/** Sign out from the home header and land on /login. */
+/** Sign out from the profile screen's settings row and land on /login. */
 export async function logOut(page: Page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.goto("/profile");
+  await page.getByText("Log out").click();
   try {
     await page.waitForURL(/\/login/, { timeout: 15_000 });
   } catch {

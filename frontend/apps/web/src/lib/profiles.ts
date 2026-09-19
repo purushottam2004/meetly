@@ -1,0 +1,128 @@
+import { supabase } from './supabaseClient'
+import type { ProfileItemKind, ProfileItemRow, ProfileRow, SwipeDirection } from './types'
+
+export async function fetchMyProfile(userId: string): Promise<ProfileRow | null> {
+  const { data, error } = await supabase.from('users').select('*').eq('id', userId).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Randomized, staged discovery feed: nearest + most recently active first,
+ * widening the radius/recency window one tier at a time (see
+ * public.discover_profiles() / DISCOVER_TIERS) until a tier has at least one
+ * not-yet-swiped person. Anonymous visitors (currentUserId null) and viewers
+ * without a saved location fall straight through to everyone, unfiltered.
+ */
+export async function fetchDiscoverProfiles(currentUserId: string | null): Promise<ProfileRow[]> {
+  const { data, error } = await supabase.rpc('discover_profiles', { viewer_id: currentUserId })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Marks the signed-in user as active now; call once per visit/session. */
+export async function touchLastActive(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .update({ last_active_at: new Date().toISOString() })
+    .eq('id', userId)
+  if (error) throw error
+}
+
+export async function fetchProfileItems(userId: string): Promise<ProfileItemRow[]> {
+  const { data, error } = await supabase
+    .from('profile_items')
+    .select('*')
+    .eq('user_id', userId)
+    .order('position', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export type ProfileHeaderFields = Partial<
+  Pick<
+    ProfileRow,
+    'display_name' | 'headline' | 'age' | 'linkedin_url' | 'instagram_url' | 'twitter_url'
+  >
+>
+
+export async function saveMyProfileHeader(userId: string, fields: ProfileHeaderFields): Promise<void> {
+  const { error } = await supabase.from('users').update(fields).eq('id', userId)
+  if (error) throw error
+}
+
+export async function saveMyLocation(
+  userId: string,
+  fields: { location_text: string; latitude: number; longitude: number },
+): Promise<void> {
+  const { error } = await supabase.from('users').update(fields).eq('id', userId)
+  if (error) throw error
+}
+
+export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'jpg'
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`
+  const { error } = await supabase.storage
+    .from('profile-photos')
+    .upload(path, file, { contentType: file.type || undefined })
+  if (error) throw error
+  return supabase.storage.from('profile-photos').getPublicUrl(path).data.publicUrl
+}
+
+export async function saveMyAvatar(userId: string, avatarUrl: string): Promise<void> {
+  const { error } = await supabase.from('users').update({ avatar_url: avatarUrl }).eq('id', userId)
+  if (error) throw error
+}
+
+export async function addProfileItem(
+  userId: string,
+  kind: ProfileItemKind,
+  position: number,
+  fields: { body?: string; photo_url?: string } = {},
+): Promise<ProfileItemRow> {
+  const { data, error } = await supabase
+    .from('profile_items')
+    .insert({ user_id: userId, kind, position, ...fields })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateProfileItem(
+  itemId: string,
+  fields: Partial<Pick<ProfileItemRow, 'body' | 'photo_url' | 'position'>>,
+): Promise<void> {
+  const { error } = await supabase.from('profile_items').update(fields).eq('id', itemId)
+  if (error) throw error
+}
+
+export async function deleteProfileItem(itemId: string): Promise<void> {
+  const { error } = await supabase.from('profile_items').delete().eq('id', itemId)
+  if (error) throw error
+}
+
+export async function reorderProfileItems(items: { id: string; position: number }[]): Promise<void> {
+  await Promise.all(items.map((item) => updateProfileItem(item.id, { position: item.position })))
+}
+
+export async function recordSwipe(
+  swiperId: string,
+  swipedId: string,
+  direction: SwipeDirection,
+): Promise<void> {
+  const { error } = await supabase
+    .from('swipes')
+    .upsert({ swiper_id: swiperId, swiped_id: swipedId, direction }, { onConflict: 'swiper_id,swiped_id' })
+  if (error) throw error
+}
+
+/** Powers the Discover empty-state "check back later" reset: re-surfaces people you passed on. */
+export async function clearMyPassedSwipes(swiperId: string): Promise<void> {
+  const { error } = await supabase
+    .from('swipes')
+    .delete()
+    .eq('swiper_id', swiperId)
+    .eq('direction', 'left')
+  if (error) throw error
+}

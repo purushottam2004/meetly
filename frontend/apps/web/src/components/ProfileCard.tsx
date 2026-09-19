@@ -1,0 +1,122 @@
+import { Fragment } from 'react'
+import type { ProfileItemRow, ProfileRow, Quote } from '../lib/types'
+import { buildStaticMapUrl, type LatLng } from '../lib/staticMap'
+import { IconCamera, IconComment, IconPin } from '../lib/icons'
+import { SocialRow } from './SocialRow'
+
+type ProfileCardProps = {
+  profile: ProfileRow
+  items: ProfileItemRow[]
+  myLocation: LatLng | null
+  onComment: (quote: Quote) => void
+}
+
+function CommentButton({ onPhoto, onClick }: { onPhoto: boolean; onClick: () => void }) {
+  return (
+    <div className={`comment-btn ${onPhoto ? 'on-photo' : 'on-text'}`} onClick={onClick}>
+      <IconComment />
+    </div>
+  )
+}
+
+export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCardProps) {
+  const name = profile.display_name || profile.username || 'Someone new'
+  const photoCount = items.filter((item) => item.kind === 'photo').length + 1
+
+  const profileLocation: LatLng | null =
+    profile.latitude != null && profile.longitude != null
+      ? { lat: profile.latitude, lng: profile.longitude }
+      : null
+  const mapUrl = profileLocation ? buildStaticMapUrl(profileLocation, myLocation) : null
+
+  const itemsWithPhotoIndex = items.reduce<{ item: ProfileItemRow; photoIndex: number }[]>((acc, item) => {
+    const previousIndex = acc.length > 0 ? acc[acc.length - 1].photoIndex : 1
+    const photoIndex = item.kind === 'photo' ? previousIndex + 1 : previousIndex
+    return [...acc, { item, photoIndex }]
+  }, [])
+
+  return (
+    <Fragment>
+      <div
+        className="photo-block first"
+        style={
+          profile.avatar_url
+            ? { backgroundImage: `url(${profile.avatar_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+            : undefined
+        }
+      >
+        <div className="name-overlay">
+          <span className="name">{name}</span>
+          {profile.age != null && <span className="age">, {profile.age}</span>}
+          {profile.headline && <div className="role">{profile.headline}</div>}
+          <SocialRow profile={profile} />
+        </div>
+        <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: 'Main photo' })} />
+      </div>
+
+      {itemsWithPhotoIndex.map(({ item, photoIndex }) => {
+        if (item.kind === 'text') {
+          const text = item.body || ''
+          return (
+            <div className="prompt-block" key={item.id}>
+              <div className="a">{text}</div>
+              <div className="prompt-actions">
+                <CommentButton onPhoto={false} onClick={() => onComment({ kind: 'text', text })} />
+              </div>
+            </div>
+          )
+        }
+
+        const label = `Photo ${photoIndex} of ${photoCount}`
+        return (
+          <div
+            className="photo-block"
+            key={item.id}
+            style={
+              item.photo_url
+                ? { backgroundImage: `url(${item.photo_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                : undefined
+            }
+          >
+            {!item.photo_url && (
+              <span className="cap">
+                photo {photoIndex} of {photoCount}
+              </span>
+            )}
+            <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: label })} />
+          </div>
+        )
+      })}
+
+      {profile.location_text && (
+        <div className="map-block">
+          <div className="location-line">
+            <IconPin /> {profile.location_text}
+          </div>
+          {mapUrl ? (
+            <div className="map-box">
+              <img
+                src={mapUrl}
+                alt={`Map showing ${profile.location_text}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+          ) : (
+            <div className="map-box">
+              <div className="map-area" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {items.length === 0 && !profile.headline && (
+        <div className="prompt-block">
+          <div className="q">No prompts yet</div>
+          <div className="a" style={{ color: 'var(--muted)' }}>
+            <IconCamera /> This person hasn't finished their profile.
+          </div>
+        </div>
+      )}
+    </Fragment>
+  )
+}
