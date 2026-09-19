@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import type { ProfileItemRow, ProfileRow, Quote } from '../lib/types'
 import { buildStaticMapUrl, type LatLng } from '../lib/staticMap'
-import { IconCamera, IconComment, IconPin } from '../lib/icons'
+import { IconComment, IconPin } from '../lib/icons'
 import { SocialRow } from './SocialRow'
 
 type ProfileCardProps = {
@@ -21,7 +21,13 @@ function CommentButton({ onPhoto, onClick }: { onPhoto: boolean; onClick: () => 
 
 export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCardProps) {
   const name = profile.display_name || profile.username || 'Someone new'
-  const photoCount = items.filter((item) => item.kind === 'photo').length + 1
+
+  // Unfinished items (a photo slot with no upload, a blank text block) are the
+  // owner's business — they shouldn't show up as empty blocks to anyone else.
+  const visibleItems = items.filter((item) =>
+    item.kind === 'photo' ? Boolean(item.photo_url) : Boolean(item.body?.trim()),
+  )
+  const photoCount = visibleItems.filter((item) => item.kind === 'photo').length + 1
 
   const profileLocation: LatLng | null =
     profile.latitude != null && profile.longitude != null
@@ -29,7 +35,7 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
       : null
   const mapUrl = profileLocation ? buildStaticMapUrl(profileLocation, myLocation) : null
 
-  const itemsWithPhotoIndex = items.reduce<{ item: ProfileItemRow; photoIndex: number }[]>((acc, item) => {
+  const itemsWithPhotoIndex = visibleItems.reduce<{ item: ProfileItemRow; photoIndex: number }[]>((acc, item) => {
     const previousIndex = acc.length > 0 ? acc[acc.length - 1].photoIndex : 1
     const photoIndex = item.kind === 'photo' ? previousIndex + 1 : previousIndex
     return [...acc, { item, photoIndex }]
@@ -72,17 +78,12 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
           <div
             className="photo-block"
             key={item.id}
-            style={
-              item.photo_url
-                ? { backgroundImage: `url(${item.photo_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                : undefined
-            }
+            style={{
+              backgroundImage: `url(${item.photo_url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
           >
-            {!item.photo_url && (
-              <span className="cap">
-                photo {photoIndex} of {photoCount}
-              </span>
-            )}
             <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: label })} />
           </div>
         )
@@ -106,15 +107,6 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
               <div className="map-area" />
             </div>
           )}
-        </div>
-      )}
-
-      {items.length === 0 && !profile.headline && (
-        <div className="prompt-block">
-          <div className="q">No prompts yet</div>
-          <div className="a" style={{ color: 'var(--muted)' }}>
-            <IconCamera /> This person hasn't finished their profile.
-          </div>
         </div>
       )}
     </Fragment>
