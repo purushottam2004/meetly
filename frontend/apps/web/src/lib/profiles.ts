@@ -11,8 +11,9 @@ export async function fetchMyProfile(userId: string): Promise<ProfileRow | null>
  * Randomized, staged discovery feed: nearest + most recently active first,
  * widening the radius/recency window one tier at a time (see
  * public.discover_profiles() / DISCOVER_TIERS) until a tier has at least one
- * not-yet-swiped person. Anonymous visitors (currentUserId null) and viewers
- * without a saved location fall straight through to everyone, unfiltered.
+ * not-yet-passed person. People you've already messaged stay in the feed;
+ * only a pass removes someone. Anonymous visitors (currentUserId null) and
+ * viewers without a saved location fall straight through to everyone.
  */
 export async function fetchDiscoverProfiles(currentUserId: string | null): Promise<ProfileRow[]> {
   const { data, error } = await supabase.rpc('discover_profiles', { viewer_id: currentUserId })

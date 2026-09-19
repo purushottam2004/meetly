@@ -20,7 +20,7 @@ type ComposeState = { profile: ProfileRow; quote: Quote | null }
 type LocationState = { openComposeFor?: PendingCompose } | null
 
 export function DiscoverPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
   const routerLocation = useLocation()
 
@@ -40,9 +40,13 @@ export function DiscoverPage() {
     return profiles
   }
 
+  // Wait for the session to settle: fetching while auth is still loading sends
+  // viewer_id = null, and an anonymous feed has no one to exclude — so you'd
+  // get your own card back.
   useEffect(() => {
+    if (loading) return
     void fetchDiscoverProfiles(user?.id ?? null).then(setQueue)
-  }, [user?.id])
+  }, [loading, user?.id])
 
   useEffect(() => {
     if (!user) return

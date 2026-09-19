@@ -17,8 +17,8 @@ SEED_USER_ID = _seed_user_uuid(1)
 TEST_USER_ID = _seed_user_uuid(2)
 
 # public.discover_profiles() walks these (radius_km, max_days) tiers, in this
-# order, stopping at the first tier with an unswiped match. Keep in sync with
-# supabase/migrations/20260920100500_discover_tiers.sql.
+# order, stopping at the first tier with a not-yet-passed match. Keep in sync
+# with the latest discover_profiles() migration.
 DISCOVER_TIERS = [
     (0.5, 1),
     (1.0, 1),
