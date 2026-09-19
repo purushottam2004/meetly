@@ -154,14 +154,8 @@ export function ProfilePage() {
           />
         ) : (
           <div className="profile-header-card">
-            <div
-              className="photo-block first photo-variant-0"
-              style={
-                profile.avatar_url
-                  ? { backgroundImage: `url(${profile.avatar_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                  : undefined
-              }
-            >
+            <div className="photo-block first photo-variant-0">
+              {profile.avatar_url && <img src={profile.avatar_url} alt="" />}
               <div className="name-overlay">
                 <span className="name">{profile.display_name || 'You'}</span>
                 <div className="role">{profile.headline || 'Add your role or headline'}</div>
@@ -222,17 +216,12 @@ export function ProfilePage() {
               {item.kind === 'photo' ? (
                 <div
                   className="item-photo"
-                  style={
-                    item.photo_url
-                      ? { backgroundImage: `url(${item.photo_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                      : undefined
-                  }
                   onClick={() => {
                     setPendingPhotoItemId(item.id)
                     photoInputRef.current?.click()
                   }}
                 >
-                  {!item.photo_url && <IconCamera />}
+                  {item.photo_url ? <img src={item.photo_url} alt="" /> : <IconCamera />}
                 </div>
               ) : editingItemId === item.id ? (
                 <textarea
@@ -317,18 +306,8 @@ function ProfileHeaderEditor({
 
   return (
     <div className="profile-header-card">
-      <div
-        className="photo-block first header-photo-edit photo-variant-0"
-        style={
-          profile.avatar_url
-            ? {
-                backgroundImage: `url(${profile.avatar_url})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }
-            : undefined
-        }
-      >
+      <div className="photo-block first header-photo-edit photo-variant-0">
+        {profile.avatar_url && <img src={profile.avatar_url} alt="" />}
         <div className="change-photo-btn" onClick={onChangePhoto}>
           <IconCamera /> {uploadingAvatar ? 'Uploading…' : 'Change photo'}
         </div>

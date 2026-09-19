@@ -42,14 +42,8 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
 
   return (
     <Fragment>
-      <div
-        className="photo-block first"
-        style={
-          profile.avatar_url
-            ? { backgroundImage: `url(${profile.avatar_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-            : undefined
-        }
-      >
+      <div className="photo-block first">
+        {profile.avatar_url && <img src={profile.avatar_url} alt="" />}
         <div className="name-overlay">
           <span className="name">{name}</span>
           {profile.age != null && <span className="age">, {profile.age}</span>}
@@ -74,15 +68,8 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
 
         const label = `Photo ${photoIndex} of ${photoCount}`
         return (
-          <div
-            className="photo-block"
-            key={item.id}
-            style={{
-              backgroundImage: `url(${item.photo_url})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          >
+          <div className="photo-block" key={item.id}>
+            {item.photo_url && <img src={item.photo_url} alt="" />}
             <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: label })} />
           </div>
         )

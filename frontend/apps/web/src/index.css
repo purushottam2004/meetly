@@ -226,16 +226,20 @@ body {
 .card.fly-right { transform: translateX(420px) rotate(18deg); opacity: 0; }
 
 .photo-block {
-  height: 300px;
+  min-height: 220px;
   background: linear-gradient(160deg, #DCE6FA 0%, #EDE3F5 55%, #F6E8DC 100%);
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
   color: var(--muted);
   font-size: 12px;
   position: relative;
 }
-.photo-block.first { height: 340px; }
+.photo-block.first { min-height: 260px; }
+.photo-block:has(img),
+.photo-block.first:has(img) { min-height: 0; }
+.photo-block img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 .photo-block .cap {
   padding: 6px 12px; background: rgba(255,255,255,0.85); backdrop-filter: blur(2px);
   border-radius: 20px; font-weight: 500; color: var(--text-soft);
@@ -628,10 +632,16 @@ input.input-box:focus { outline: none; border-color: var(--primary); }
 .profile-item .item-actions .icon-action[aria-disabled="true"] { opacity: 0.35; cursor: default; }
 .profile-item .item-body { margin-top: 12px; }
 .profile-item .item-photo {
-  height: 160px; border-radius: var(--radius-sm);
+  min-height: 160px; border-radius: var(--radius-sm); overflow: hidden;
   background: linear-gradient(160deg, #DCE6FA, #EDE3F5);
   display: flex; align-items: center; justify-content: center; color: rgba(43,38,32,0.35);
   cursor: pointer;
+}
+.profile-item .item-photo:has(img) { min-height: 0; display: block; }
+.profile-item .item-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 .profile-item .item-photo svg { width: 30px; height: 30px; }
 .profile-item .item-text { font-size: 13.5px; line-height: 1.45; color: var(--text); white-space: pre-wrap; }
