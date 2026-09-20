@@ -110,4 +110,16 @@ test.describe("Smoke Tests", () => {
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByText("Sign in to message people")).toBeVisible();
   });
+
+  test("notification icon is an opaque PNG the service worker can load", async ({
+    request,
+  }) => {
+    const icon = await request.get("/apple-touch-icon.png");
+    expect(icon.ok()).toBeTruthy();
+    expect(icon.headers()["content-type"] ?? "").toMatch(/image\/png/);
+
+    const sw = await request.get("/sw.js");
+    expect(sw.ok()).toBeTruthy();
+    expect(await sw.text()).toContain("/apple-touch-icon.png");
+  });
 });

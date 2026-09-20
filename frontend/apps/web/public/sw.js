@@ -1,9 +1,15 @@
+/** Opaque Meetly mark. Transparent /icon-192.png is ignored by Chrome and
+ *  replaced with the Chrome logo on macOS and Android notifications. */
+const NOTIFICATION_ICON = '/apple-touch-icon.png'
+
+function assetUrl(path) {
+  return new URL(path, self.location.origin).href
+}
+
 self.addEventListener('push', (event) => {
   let payload = {
     title: 'Someone',
     body: 'Sent a message',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
     tag: 'chat',
     data: { url: '/chats' },
   }
@@ -13,11 +19,13 @@ self.addEventListener('push', (event) => {
     /* keep defaults */
   }
 
+  const icon = assetUrl(NOTIFICATION_ICON)
+
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: payload.icon,
-      badge: payload.badge,
+      icon,
+      badge: icon,
       tag: payload.tag,
       renotify: true,
       data: payload.data,
