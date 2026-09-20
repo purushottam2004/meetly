@@ -107,7 +107,9 @@ Meetly signs in through **Supabase Auth → Google**, not the frontend. Put the 
 
 ## Message push notifications (Web Push)
 
-After sign-in the web app asks once for notification permission. New DMs then notify the recipient on Android Chrome even if Meetly is closed. iPhone Chrome only receives these after **Add to Home Screen**.
+After sign-in the web app asks for notification permission while the browser still allows it. New DMs then notify the recipient on Android Chrome even if Meetly is closed. iPhone Chrome only receives these after **Add to Home Screen**.
+
+The notification uses the opaque Meetly mark (`/apple-touch-icon.png`). Chrome drops transparent icons (`/icon-192.png`) and shows the Chrome logo instead. After changing `public/sw.js`, reopen the site once so the updated service worker installs. On macOS the *app* that owns the banner is still Chrome unless Meetly is installed as a PWA; the thumbnail inside the notification is the Meetly mark.
 
 Local VAPID keys live in [`.env.example`](./.env.example) (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`) and must match `VITE_VAPID_PUBLIC_KEY` in the frontend env. `python setup.py` writes the local pair into `.env` if it is missing. Edge Function secrets are wired in [`config.toml`](./config.toml) (`[edge_runtime.secrets]`).
 
@@ -124,6 +126,6 @@ docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' supabase_edge_runt
 
 The function imports from `esm.sh` and npm on first boot, so the container needs working TLS to the internet. Behind a TLS-intercepting VPN or proxy (Cato, Zscaler, and similar) the container does not trust the injected root even when the host does, and the call fails with `503 BOOT_ERROR`. `docker logs supabase_edge_runtime_<project-id>` shows `invalid peer certificate: UnknownIssuer`. Turn the VPN off or add its root CA to the container.
 
-Hosted project: generate a new pair (`npx web-push generate-vapid-keys`), set `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=...`, and put the public key in the frontend env. Pushing `supabase/**` to `staging` or `main` deploys the function via [`.github/workflows/db-push.yaml`](../.github/workflows/db-push.yaml) (`supabase functions deploy`); you can also deploy by hand with `supabase functions deploy push-on-message`. Optional: a Database Webhook on `messages` INSERT to that function (service role JWT) covers sends that did not go through the web client.
+Hosted project: generate a new pair (`npx web-push generate-vapid-keys`), set `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=...`, and put the public key in the frontend env. Pushing `supabase/**` to `staging` or `main` deploys the function via [`.github/workflows/db-push.yaml`](../.github/workflows/db-push.yaml) (`supabase functions deploy`); that workflow also fails if those two secrets are missing on the project. You can also deploy by hand with `supabase functions deploy push-on-message`. Optional: a Database Webhook on `messages` INSERT to that function (service role JWT) covers sends that did not go through the web client.
 
 Contribution rules: [CONTRIBUTING.md](./CONTRIBUTING.md).

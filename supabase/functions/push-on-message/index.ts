@@ -120,11 +120,14 @@ Deno.serve(async (req) => {
     vapidPrivate,
   )
 
+  // Opaque apple-touch icon. Transparent /icon-192.png is dropped by Chrome
+  // and the notification shows the Chrome logo instead.
+  const icon = '/apple-touch-icon.png'
   const notification = JSON.stringify({
     title,
     body,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon,
+    badge: icon,
     tag,
     renotify: true,
     data: { url },
