@@ -169,6 +169,7 @@ body {
 .screen { display: block; }
 #screen-chat-detail { display: flex; flex-direction: column; height: 100%; }
 #screen-login { display: flex; flex-direction: column; height: 100%; }
+#screen-user-profile { padding-bottom: 24px; }
 
 .back-row {
   display: flex; align-items: center; gap: 8px;
@@ -471,11 +472,25 @@ body {
 }
 .chat-detail-header .arrow { cursor: pointer; color: var(--text-soft); display: flex; }
 .chat-detail-header .arrow svg { width: 18px; height: 18px; }
+.chat-detail-header .chat-person {
+  display: flex; align-items: center; gap: 12px;
+  flex: 1; min-width: 0;
+  cursor: pointer;
+  margin: -8px -8px -8px 0;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+}
+.chat-detail-header .chat-person:hover { background: var(--surface-sunk); }
+.chat-detail-header .chat-person:active { background: var(--border); }
 .chat-detail-header .cavatar {
   width: 34px; height: 34px; border-radius: 50%;
   background: linear-gradient(135deg, #DCE6FA, #EDE3F5);
+  flex: 0 0 auto;
 }
-.chat-detail-header .cname { font-weight: 600; font-size: 14.5px; }
+.chat-detail-header .cname {
+  font-weight: 600; font-size: 14.5px;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 .tip-bar-collapsed {
   display: flex; align-items: center; gap: 8px;

@@ -72,14 +72,20 @@ export function ChatDetailPage() {
           <IconArrowLeft />
         </span>
         <div
-          className="cavatar"
-          style={
-            otherProfile?.avatar_url
-              ? { backgroundImage: `url(${otherProfile.avatar_url})`, backgroundSize: 'cover' }
-              : undefined
-          }
-        />
-        <div className="cname">{name}</div>
+          className="chat-person"
+          title="View profile"
+          onClick={() => otherUserId && navigate(`/profile/${otherUserId}`)}
+        >
+          <div
+            className="cavatar"
+            style={
+              otherProfile?.avatar_url
+                ? { backgroundImage: `url(${otherProfile.avatar_url})`, backgroundSize: 'cover' }
+                : undefined
+            }
+          />
+          <div className="cname">{name}</div>
+        </div>
       </div>
 
       <div id="tipsBar">

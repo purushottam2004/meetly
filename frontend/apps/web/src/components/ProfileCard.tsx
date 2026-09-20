@@ -8,7 +8,7 @@ type ProfileCardProps = {
   profile: ProfileRow
   items: ProfileItemRow[]
   myLocation: LatLng | null
-  onComment: (quote: Quote) => void
+  onComment?: (quote: Quote) => void
 }
 
 function CommentButton({ onPhoto, onClick }: { onPhoto: boolean; onClick: () => void }) {
@@ -50,7 +50,9 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
           {profile.headline && <div className="role">{profile.headline}</div>}
           <SocialRow profile={profile} lastActiveAt={profile.last_active_at} />
         </div>
-        <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: 'Main photo' })} />
+        {onComment && (
+          <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: 'Main photo' })} />
+        )}
       </div>
 
       {itemsWithPhotoIndex.map(({ item, photoIndex }) => {
@@ -59,9 +61,11 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
           return (
             <div className="prompt-block" key={item.id}>
               <div className="a">{text}</div>
-              <div className="prompt-actions">
-                <CommentButton onPhoto={false} onClick={() => onComment({ kind: 'text', text })} />
-              </div>
+              {onComment && (
+                <div className="prompt-actions">
+                  <CommentButton onPhoto={false} onClick={() => onComment({ kind: 'text', text })} />
+                </div>
+              )}
             </div>
           )
         }
@@ -70,7 +74,9 @@ export function ProfileCard({ profile, items, myLocation, onComment }: ProfileCa
         return (
           <div className="photo-block" key={item.id}>
             {item.photo_url && <img src={item.photo_url} alt="" />}
-            <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: label })} />
+            {onComment && (
+              <CommentButton onPhoto onClick={() => onComment({ kind: 'photo', text: label })} />
+            )}
           </div>
         )
       })}
