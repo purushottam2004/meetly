@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import { LoginForm } from '@repo/auth'
 import { IconArrowLeft, IconGoogle } from '../lib/icons'
 import { resumeAfterAuth, type AuthFlowState } from '../lib/authFlow'
+import { isLocalEnvironment } from '../lib/environment'
 import { isLocalSeedEnabled } from '../lib/localSupabase'
 
 export function LoginPage() {
@@ -33,10 +34,11 @@ export function LoginPage() {
       <div className="login-body">
         <div className="login-logo">meetly</div>
         <div className="login-tagline">Sign in to message people and view your chats.</div>
-        {isLocalSeedEnabled() && (
+        {(isLocalEnvironment() || isLocalSeedEnabled()) && (
           <div className="login-seed">
             <p className="login-seed-hint">
-              Local seed: <code>seed_user@gmail.com</code> / <code>password123</code>
+              Local seed: <code>seed_user@gmail.com</code> or <code>test@example.com</code> /{' '}
+              <code>password123</code>
             </p>
             <LoginForm client={supabase} />
             <div className="login-or">or</div>

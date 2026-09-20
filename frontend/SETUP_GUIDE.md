@@ -33,6 +33,7 @@ Vite loads shared env from this folder first, then `apps/<app>/.env*` (app value
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | From supabase `.env` → `SUPABASE_PUBLISHABLE_KEY` |
 | `VITE_BACKEND_URL` | Backend URL, e.g. `http://127.0.0.1:8080` |
 | `VITE_VAPID_PUBLIC_KEY` | Same value as `VAPID_PUBLIC_KEY` in [`supabase/.env`](../supabase/.env.example). Needed for message push notifications. |
+| `VITE_ENVIRONMENT` | `LOCAL` / `STAGE` / `PRODUCTION`. `LOCAL` shows email + password login on Meetly (seed users). Restart the dev server after changing it. |
 
 Never put `SUPABASE_SECRET_KEY` or `VAPID_PRIVATE_KEY` in frontend env files.
 
