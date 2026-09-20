@@ -131,11 +131,11 @@ Use the same secret and variable **names** in both environments; GitHub injects 
 
 This workflow does **not** use `SUPABASE_SECRET_KEY` or `SUPABASE_PUBLISHABLE_KEY`. Those are app keys; keep them for frontend/backend deploys.
 
-It also does **not** set Edge Function secrets. For message push, set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` on the hosted project (`supabase secrets set` or Dashboard → Edge Functions → Secrets) and put the matching public key in the frontend env as `VITE_VAPID_PUBLIC_KEY`. See [supabase/SETUP_GUIDE.md — Message push notifications](../../supabase/SETUP_GUIDE.md#message-push-notifications-web-push).
+It also does **not** set Edge Function secrets. After `db push` it lists secrets on the hosted project and **fails** if `VAPID_PUBLIC_KEY` or `VAPID_PRIVATE_KEY` are missing (names only; values are not printed). Set them on the project (`supabase secrets set` or Dashboard → Edge Functions → Secrets) and put the matching public key in the frontend env as `VITE_VAPID_PUBLIC_KEY`. See [supabase/SETUP_GUIDE.md — Message push notifications](../../supabase/SETUP_GUIDE.md#message-push-notifications-web-push).
 
 | | |
 | --- | --- |
 | Triggers | Push to `main` or `staging` touching `supabase/**` (or this workflow file); manual dispatch |
 | Secrets / vars | The three above, resolved from the selected environment |
 
-The job will fail until each environment has `SUPABASE_PROJECT_ID` and `SUPABASE_DB_PASSWORD`, and an access token is available.
+The job will fail until each environment has `SUPABASE_PROJECT_ID` and `SUPABASE_DB_PASSWORD`, an access token is available, and the linked project has `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`.

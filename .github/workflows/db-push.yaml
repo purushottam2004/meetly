@@ -33,5 +33,52 @@ jobs:
         working-directory: supabase
       - run: supabase db push
         working-directory: supabase
+      - name: Check Edge Function secrets
+        working-directory: supabase
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, sys
+
+          ref = os.environ["SUPABASE_PROJECT_ID"]
+          raw = subprocess.check_output(
+              [
+                  "supabase",
+                  "secrets",
+                  "list",
+                  "--project-ref",
+                  ref,
+                  "--output-format",
+                  "json",
+              ],
+              text=True,
+          )
+          data = json.loads(raw)
+          names = set()
+          if isinstance(data, list):
+              for item in data:
+                  if isinstance(item, str):
+                      names.add(item)
+                  elif isinstance(item, dict):
+                      name = item.get("name") or item.get("Name")
+                      if name:
+                          names.add(name)
+
+          required = ("VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY")
+          missing = [name for name in required if name not in names]
+          if missing:
+              print(
+                  "Missing Edge Function secrets on project "
+                  f"{ref}: {', '.join(missing)}",
+                  file=sys.stderr,
+              )
+              print(
+                  "Set them with: supabase secrets set "
+                  "VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... "
+                  f"--project-ref {ref}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          print("Required Edge Function secrets are present: " + ", ".join(required))
+          PY
       - run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID" --use-api --yes
         working-directory: supabase
