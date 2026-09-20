@@ -1,0 +1,25 @@
+Deploy (staging/production)
+
+Frontend (Vercel or other Vite host):
+- VITE_SUPABASE_URL
+- VITE_SUPABASE_PUBLISHABLE_KEY
+- VITE_BACKEND_URL
+- VITE_VAPID_PUBLIC_KEY (new; production public key — do not reuse the local pair in .env.example)
+- Site must be HTTPS
+- PWA (manifest + sw.js); iPhone closed-app push only after Add to Home Screen
+
+Hosted Supabase:
+  npx web-push generate-vapid-keys
+  supabase db push
+  supabase functions deploy push-on-message
+  supabase secrets set VAPID_PUBLIC_KEY=<prod-public> VAPID_PRIVATE_KEY=<prod-private>
+Optional: Database Webhook on messages INSERT to push-on-message with the service role JWT.
+
+Do not put in the frontend:
+- VAPID_PRIVATE_KEY
+- SUPABASE_SECRET_KEY
+
+Google OAuth:
+- Add the production origin and https://<project-ref>.supabase.co/auth/v1/callback on the Google client.
+
+Generate a new VAPID pair for production; keys in .env.example are local-only.
