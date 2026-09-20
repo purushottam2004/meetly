@@ -21,6 +21,35 @@ test.describe("Smoke Tests", () => {
     await expect(body).not.toBeEmpty();
   });
 
+  test("header profile photo is not clipped", async ({ page }) => {
+    await page.goto("/");
+
+    const header = page.locator("#mainHeader");
+    const avatar = page.locator(".avatar-completeness");
+    const badge = page.locator(".avatar-completeness-pct");
+    await expect(header).toBeVisible();
+    await expect(avatar).toBeVisible();
+    await expect(badge).toBeVisible();
+
+    const headerBox = await header.boundingBox();
+    const avatarBox = await avatar.boundingBox();
+    const badgeBox = await badge.boundingBox();
+    expect(headerBox).toBeTruthy();
+    expect(avatarBox).toBeTruthy();
+    expect(badgeBox).toBeTruthy();
+    if (!headerBox || !avatarBox || !badgeBox) return;
+
+    expect(avatarBox.height).toBeGreaterThanOrEqual(42);
+    expect(avatarBox.y).toBeGreaterThanOrEqual(headerBox.y);
+    expect(avatarBox.y + avatarBox.height).toBeLessThanOrEqual(
+      headerBox.y + headerBox.height + 0.5,
+    );
+    expect(badgeBox.y).toBeGreaterThanOrEqual(headerBox.y);
+    expect(badgeBox.x + badgeBox.width).toBeLessThanOrEqual(
+      headerBox.x + headerBox.width + 0.5,
+    );
+  });
+
   test("should let unauthenticated users browse Discover", async ({
     page,
   }) => {
@@ -31,7 +60,7 @@ test.describe("Smoke Tests", () => {
     await expect(page.getByRole("button", { name: "Everyone" })).toBeVisible();
   });
 
-  test("passing a profile keeps Discover from going empty", async ({ page }) => {
+  test("skipping a profile keeps Discover from going empty", async ({ page }) => {
     await page.goto("/");
 
     const card = page.locator("#cardSlot .card");
@@ -39,7 +68,7 @@ test.describe("Smoke Tests", () => {
     const firstName = (await page.locator("#cardSlot .name").textContent()) ?? "";
     expect(firstName.length).toBeGreaterThan(0);
 
-    await page.getByRole("button", { name: "Pass" }).click();
+    await page.getByRole("button", { name: "Skip" }).click();
 
     await expect(card).toBeVisible();
     await expect(page.getByText("That's everyone for now")).toHaveCount(0);
@@ -48,7 +77,7 @@ test.describe("Smoke Tests", () => {
     });
   });
 
-  test("open to chat appears next to last-seen on opted-in profiles", async ({
+  test("open to meet appears next to last-seen on opted-in profiles", async ({
     page,
   }) => {
     await page.goto("/");
@@ -59,17 +88,17 @@ test.describe("Smoke Tests", () => {
 
     for (let attempt = 0; attempt < 20; attempt += 1) {
       if (await badge.isVisible()) {
-        await expect(badge).toHaveText("Open to chat");
+        await expect(badge).toHaveText("Open to meet");
         await expect(page.locator("#cardSlot .last-seen-badge")).toBeVisible();
         return;
       }
-      const pass = page.getByRole("button", { name: "Pass" });
-      if (!(await pass.isVisible())) break;
-      await pass.click();
+      const skip = page.getByRole("button", { name: "Skip" });
+      if (!(await skip.isVisible())) break;
+      await skip.click();
       await expect(card).toBeVisible();
     }
 
-    throw new Error("expected an Open to chat chip on a Discover profile");
+    throw new Error("expected an Open to meet chip on a Discover profile");
   });
 
   test("should redirect unauthenticated users away from Chats", async ({

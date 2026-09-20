@@ -14,6 +14,7 @@ import {
   touchLastActive,
 } from '../lib/profiles'
 import { enableMessagePush } from '../lib/push'
+import { redirectToOnboarding, type AuthFlowState } from '../lib/authFlow'
 
 /**
  * Persistent header + scroll viewport shared by every screen, matching the
@@ -64,9 +65,11 @@ export function AppShell() {
   useEffect(() => {
     if (!user) return
     let cancelled = false
+    const flowState = (location.state as AuthFlowState) ?? { from: location }
 
     void fetchMyProfile(user.id).then(async (profile) => {
       if (cancelled) return
+      let next = profile
       try {
         const position = await requestBrowserLocation()
         if (cancelled) return
@@ -75,11 +78,12 @@ export function AppShell() {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         })
+        next = await fetchMyProfile(user.id)
       } catch {
-        if (!cancelled && profile && profile.latitude == null) {
-          navigate('/location', { state: { from: location } })
-        }
+        /* denied or unavailable — fall through to the picker if needed */
       }
+      if (cancelled) return
+      redirectToOnboarding(navigate, next, flowState, location.pathname)
     })
 
     return () => {

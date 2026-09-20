@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { fetchHiddenUserIds } from './safety'
 import type { MessageRow, Quote } from './types'
 
 export type Conversation = {
@@ -87,13 +88,14 @@ export async function sendMessage(
 
 /** How many distinct conversations have unseen messages (not how many messages). */
 export async function countUnreadChats(userId: string): Promise<number> {
+  const hidden = await fetchHiddenUserIds(userId)
   const { data, error } = await supabase
     .from('messages')
     .select('sender_id')
     .eq('recipient_id', userId)
     .eq('is_seen', false)
   if (error) throw error
-  return new Set((data ?? []).map((m) => m.sender_id)).size
+  return new Set((data ?? []).map((m) => m.sender_id).filter((id) => !hidden.has(id))).size
 }
 
 /** Marks every not-yet-seen message from `otherUserId` to `userId` as seen. */

@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { IconArrowLeft, IconNavigation, IconPin, IconSearch } from '../lib/icons'
 import { LOCATION_SUGGESTIONS } from '../lib/locations'
-import { saveMyLocation } from '../lib/profiles'
-import { resumeAfterAuth, type AuthFlowState } from '../lib/authFlow'
+import { fetchMyProfile, saveMyLocation } from '../lib/profiles'
+import { needsBasics, resumeAfterAuth, type AuthFlowState } from '../lib/authFlow'
 
 export function LocationPage() {
   const { user } = useAuth()
@@ -29,6 +29,11 @@ export function LocationPage() {
     setError(null)
     try {
       await saveMyLocation(user.id, { location_text: label, latitude, longitude })
+      const profile = await fetchMyProfile(user.id)
+      if (needsBasics(profile)) {
+        navigate('/basics', { replace: true, state: state ?? undefined })
+        return
+      }
       resumeAfterAuth(navigate, state)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save location')

@@ -88,3 +88,11 @@ export async function fetchDiscoverProfilesFiltered(
   if (error) throw error
   return data ?? []
 }
+
+export type SharedPool = Pick<PoolRow, 'id' | 'name'>
+
+export async function fetchSharedPools(otherUserId: string): Promise<SharedPool[]> {
+  const { data, error } = await supabase.rpc('shared_pools', { p_other_id: otherUserId })
+  if (error) throw error
+  return (data ?? []) as SharedPool[]
+}

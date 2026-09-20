@@ -67,8 +67,8 @@ def _auth_user(
             "latitude": latitude,
             "longitude": longitude,
             "hours_since_active": hours_since_active,
-            # The "Activate Profile" toggle defaults to off for real signups;
-            # seed users are active so Discover has something to show out of
+            # The Public / Hidden control defaults to Hidden for real signups;
+            # seed users are Public so Discover has something to show out of
             # the box.
             "is_active": is_active,
             "open_to_chat": open_to_chat,

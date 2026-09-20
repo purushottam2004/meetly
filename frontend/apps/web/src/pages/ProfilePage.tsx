@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { SocialRow } from '../components/SocialRow'
+import { VisibilityChoice } from '../components/VisibilityChoice'
 import {
   createdPoolCount,
   checkPoolName,
@@ -26,6 +27,7 @@ import {
   uploadProfilePhoto,
 } from '../lib/profiles'
 import type { MyPool, ProfileItemRow, ProfileRow } from '../lib/types'
+import { pickProfileHint } from '../lib/profileCompleteness'
 import {
   IconArrowLeft,
   IconCamera,
@@ -59,6 +61,7 @@ export function ProfilePage() {
   const [nameAvailable, setNameAvailable] = useState<boolean | null>(null)
   const nameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nameCheckGen = useRef(0)
+  const hint = useMemo(() => pickProfileHint(profile, items), [profile, items])
 
   useEffect(() => {
     if (!user) return
@@ -152,11 +155,10 @@ export function ProfilePage() {
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, body } : item)))
   }
 
-  async function toggleActive() {
-    if (!user || !profile) return
-    const nextActive = !profile.is_active
-    setProfile({ ...profile, is_active: nextActive })
-    await saveMyActiveState(user.id, nextActive)
+  async function setPublic(next: boolean) {
+    if (!user || !profile || next === profile.is_active) return
+    setProfile({ ...profile, is_active: next })
+    await saveMyActiveState(user.id, next)
   }
 
   async function toggleOpenToChat() {
@@ -278,13 +280,9 @@ export function ProfilePage() {
       </div>
       <div className="screen-title-row">
         <div className="screen-title">Your profile</div>
-        <label className="toggle-row">
-          <span>Activate Profile</span>
-          <span className={`toggle-switch ${profile.is_active ? 'on' : ''}`} onClick={() => void toggleActive()}>
-            <span className="toggle-thumb" />
-          </span>
-        </label>
+        <VisibilityChoice isPublic={profile.is_active} onChange={(next) => void setPublic(next)} />
       </div>
+      {hint && <p className="profile-hint">{hint.hint}</p>}
 
       <div id="profileHeader">
         {editingHeader ? (
@@ -381,14 +379,14 @@ export function ProfilePage() {
                 <textarea
                   className="item-text-edit"
                   defaultValue={item.body ?? ''}
-                  placeholder="Say something about yourself..."
+                  placeholder="What you do, what you're into, how you like to meet…"
                   onBlur={(event) => {
                     void saveItemText(item.id, event.target.value)
                     setEditingItemId(null)
                   }}
                 />
               ) : (
-                <div className="item-text">{item.body || 'Tap edit to write something...'}</div>
+                <div className="item-text">{item.body || 'Tap to write a bit about yourself'}</div>
               )}
             </div>
           </div>
@@ -522,7 +520,7 @@ function OpenToChatToggle({ on, onToggle }: { on: boolean; onToggle: () => void 
       aria-pressed={on}
       onClick={onToggle}
     >
-      <span>Open to chat</span>
+      <span>Open to meet</span>
       <span className={`toggle-switch ${on ? 'on' : ''}`}>
         <span className="toggle-thumb" />
       </span>

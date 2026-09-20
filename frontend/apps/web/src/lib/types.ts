@@ -13,6 +13,8 @@ export type ProfileRow = {
   twitter_url: string | null
   last_active_at: string
   is_active: boolean
+  /** Set when the user leaves the first-run basics screen via Continue. */
+  basics_completed_at: string | null
   open_to_chat: boolean
   visible_in_everyone: boolean
   created_at: string
@@ -77,6 +79,12 @@ export type SwipeRow = {
   swiper_id: string
   swiped_id: string
   direction: SwipeDirection
+  created_at: string
+}
+
+export type UserBlockRow = {
+  blocker_id: string
+  blocked_id: string
   created_at: string
 }
 

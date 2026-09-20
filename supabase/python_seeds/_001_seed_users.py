@@ -47,6 +47,8 @@ def seed_users():
                 "last_active_at": last_active_at,
                 "is_active": profile.get("is_active"),
                 "open_to_chat": profile.get("open_to_chat"),
+                # Seed profiles are already filled in; skip the first-run basics screen.
+                "basics_completed_at": datetime.now(timezone.utc).isoformat(),
             }.items()
             if value is not None
         }

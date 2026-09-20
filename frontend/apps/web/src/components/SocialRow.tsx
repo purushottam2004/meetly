@@ -33,7 +33,7 @@ export function SocialRow({
   return (
     <div className="social-row">
       {lastActiveAt && <span className="last-seen-badge">{formatLastSeen(lastActiveAt)}</span>}
-      {openToChat && <span className="open-to-chat-badge">Open to chat</span>}
+      {openToChat && <span className="open-to-chat-badge">Open to meet</span>}
       {links.map(({ key, icon }) => {
         const Icon = SOCIAL_ICONS[icon]
         return (

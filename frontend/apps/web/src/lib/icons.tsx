@@ -117,6 +117,14 @@ export const IconSend = (props: SVGProps<SVGSVGElement>) => (
   </Svg>
 )
 
+export const IconMore = (props: SVGProps<SVGSVGElement>) => (
+  <Svg {...props}>
+    <circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none" />
+  </Svg>
+)
+
 export const IconComment = (props: SVGProps<SVGSVGElement>) => (
   <Svg {...props}>
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />

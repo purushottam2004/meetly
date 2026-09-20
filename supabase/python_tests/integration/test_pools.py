@@ -2,11 +2,24 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 
 import pytest
+from supabase import create_client
+
+from python_seeds.client import SUPABASE_URL
 
 pytestmark = pytest.mark.integration
+
+PASSWORD = "password123"
+
+
+def _publishable_key() -> str:
+    key = os.getenv("SUPABASE_PUBLISHABLE_KEY") or os.getenv("SUPABASE_ANON_KEY") or ""
+    if not key:
+        pytest.skip("SUPABASE_PUBLISHABLE_KEY is not set")
+    return key
 
 
 def test_everyone_default_and_pool_union_filter(admin_client):
@@ -104,3 +117,57 @@ def test_everyone_default_and_pool_union_filter(admin_client):
         admin_client.table("pools").delete().eq("id", pool_id).execute()
         admin_client.auth.admin.delete_user(hidden_id)
         admin_client.auth.admin.delete_user(member_id)
+
+
+def test_shared_pools_returns_visible_overlap_only(admin_client):
+    suffix = uuid.uuid4().hex[:8].upper()
+    pool_id = str(uuid.uuid4())
+    hidden_pool_id = str(uuid.uuid4())
+    email = f"overlap_{suffix.lower()}@example.com"
+    other_email = f"overlap_b_{suffix.lower()}@example.com"
+
+    viewer = admin_client.auth.admin.create_user(
+        {"email": email, "password": PASSWORD, "email_confirm": True}
+    ).user
+    other = admin_client.auth.admin.create_user(
+        {"email": other_email, "password": PASSWORD, "email_confirm": True}
+    ).user
+
+    try:
+        admin_client.table("pools").insert(
+            [
+                {
+                    "id": pool_id,
+                    "name": f"SHARED{suffix}",
+                    "join_code": suffix[:6],
+                    "created_by": viewer.id,
+                },
+                {
+                    "id": hidden_pool_id,
+                    "name": f"HIDDEN{suffix}",
+                    "join_code": suffix[-6:],
+                    "created_by": viewer.id,
+                },
+            ]
+        ).execute()
+        admin_client.table("pool_memberships").insert(
+            [
+                {"user_id": viewer.id, "pool_id": pool_id, "visible": True},
+                {"user_id": other.id, "pool_id": pool_id, "visible": True},
+                {"user_id": viewer.id, "pool_id": hidden_pool_id, "visible": True},
+                {"user_id": other.id, "pool_id": hidden_pool_id, "visible": False},
+            ]
+        ).execute()
+
+        client = create_client(SUPABASE_URL, _publishable_key())
+        client.auth.sign_in_with_password({"email": email, "password": PASSWORD})
+        names = {
+            row["name"]
+            for row in client.rpc("shared_pools", {"p_other_id": other.id}).execute().data
+        }
+        assert names == {f"SHARED{suffix}"}
+    finally:
+        admin_client.table("pools").delete().eq("id", pool_id).execute()
+        admin_client.table("pools").delete().eq("id", hidden_pool_id).execute()
+        admin_client.auth.admin.delete_user(viewer.id)
+        admin_client.auth.admin.delete_user(other.id)

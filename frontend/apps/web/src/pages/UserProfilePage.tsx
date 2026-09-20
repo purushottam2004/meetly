@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { ProfileCard } from '../components/ProfileCard'
 import { IconArrowLeft } from '../lib/icons'
+import { fetchSharedPools, type SharedPool } from '../lib/pools'
 import { fetchMyProfile, fetchProfileItems } from '../lib/profiles'
 import type { LatLng, ProfileItemRow, ProfileRow } from '../lib/types'
 
@@ -14,12 +15,21 @@ export function UserProfilePage() {
   const [profile, setProfile] = useState<ProfileRow | null | undefined>(undefined)
   const [items, setItems] = useState<ProfileItemRow[]>([])
   const [myLocation, setMyLocation] = useState<LatLng | null>(null)
+  const [sharedForId, setSharedForId] = useState<{ id: string; pools: SharedPool[] } | null>(null)
 
   useEffect(() => {
     if (!userId) return
     void fetchMyProfile(userId).then(setProfile)
     void fetchProfileItems(userId).then(setItems)
   }, [userId])
+
+  useEffect(() => {
+    if (!user || !userId || userId === user.id) return
+    const profileId = userId
+    void fetchSharedPools(profileId)
+      .then((pools) => setSharedForId({ id: profileId, pools }))
+      .catch(() => setSharedForId({ id: profileId, pools: [] }))
+  }, [user, userId])
 
   useEffect(() => {
     if (!user) return
@@ -29,6 +39,8 @@ export function UserProfilePage() {
       }
     })
   }, [user])
+
+  const sharedPools = user && userId && userId !== user.id && sharedForId?.id === userId ? sharedForId.pools : []
 
   if (user && userId === user.id) {
     return <Navigate to="/profile" replace />
@@ -55,7 +67,7 @@ export function UserProfilePage() {
         <IconArrowLeft /> Back to chat
       </div>
       <div className="card">
-        <ProfileCard profile={profile} items={items} myLocation={myLocation} />
+        <ProfileCard profile={profile} items={items} myLocation={myLocation} sharedPools={sharedPools} />
       </div>
     </div>
   )

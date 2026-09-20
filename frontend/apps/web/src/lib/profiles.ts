@@ -87,13 +87,13 @@ export async function saveMyProfileHeader(userId: string, fields: ProfileHeaderF
   if (error) throw error
 }
 
-/** "Activate Profile" toggle — off by default; only active profiles show up in Discover. */
+/** Public / Hidden — off by default; only public profiles show up in Discover. */
 export async function saveMyActiveState(userId: string, isActive: boolean): Promise<void> {
   const { error } = await supabase.from('users').update({ is_active: isActive }).eq('id', userId)
   if (error) throw error
 }
 
-/** "Open to chat" toggle — off by default; shown as a chip next to last-seen. */
+/** "Open to meet" toggle — off by default; shown as a chip next to last-seen. */
 export async function saveMyOpenToChat(userId: string, openToChat: boolean): Promise<void> {
   const { error } = await supabase.from('users').update({ open_to_chat: openToChat }).eq('id', userId)
   if (error) throw error
@@ -160,6 +160,39 @@ export async function updateProfileItem(
 ): Promise<void> {
   const { error } = await supabase.from('profile_items').update(fields).eq('id', itemId)
   if (error) throw error
+}
+
+export async function completeProfileBasics(
+  userId: string,
+  fields: {
+    display_name: string
+    headline: string
+    is_active: boolean
+    about: string
+  },
+): Promise<void> {
+  const name = fields.display_name.trim()
+  const headline = fields.headline.trim()
+  const { error } = await supabase
+    .from('users')
+    .update({
+      display_name: name || null,
+      headline: headline || null,
+      is_active: fields.is_active,
+      basics_completed_at: new Date().toISOString(),
+    })
+    .eq('id', userId)
+  if (error) throw error
+
+  const about = fields.about.trim()
+  if (!about) return
+  const items = await fetchProfileItems(userId)
+  const emptyText = items.find((item) => item.kind === 'text' && !item.body?.trim())
+  if (emptyText) {
+    await updateProfileItem(emptyText.id, { body: about })
+    return
+  }
+  await addProfileItem(userId, 'text', items.length, { body: about })
 }
 
 export async function deleteProfileItem(itemId: string): Promise<void> {

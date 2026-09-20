@@ -8,6 +8,7 @@ import type {
   ProfileRow,
   PushSubscriptionRow,
   SwipeRow,
+  UserBlockRow,
 } from './types'
 
 const SESSION_KEY = 'meetly-local-session'
@@ -15,6 +16,15 @@ const DB_KEY = 'meetly-local-db-v3'
 const PASSWORD = 'password123'
 
 type AuthAccount = { id: string; email: string; password: string; name: string }
+
+type UserReportRow = {
+  id: string
+  reporter_id: string
+  reported_id: string
+  reason: string
+  details: string | null
+  created_at: string
+}
 
 type LocalDb = {
   users: ProfileRow[]
@@ -24,6 +34,8 @@ type LocalDb = {
   pools: PoolRow[]
   pool_memberships: PoolMembershipRow[]
   push_subscriptions: PushSubscriptionRow[]
+  user_blocks: UserBlockRow[]
+  user_reports: UserReportRow[]
   accounts: AuthAccount[]
 }
 
@@ -61,6 +73,7 @@ function profile(
     twitter_url: null,
     last_active_at: isoHoursAgo(fields.hoursAgo ?? 0),
     is_active: true,
+    basics_completed_at: now,
     open_to_chat: fields.open_to_chat === true,
     visible_in_everyone: fields.visible_in_everyone !== false,
     created_at: now,
@@ -162,6 +175,8 @@ function defaultDb(): LocalDb {
       { user_id: nearby.id, pool_id: campus.id, visible: true, created_at: now },
     ],
     push_subscriptions: [],
+    user_blocks: [],
+    user_reports: [],
     accounts: [
       { id: seed.id, email: 'seed_user@gmail.com', password: PASSWORD, name: 'Seed User' },
       { id: test.id, email: 'test@example.com', password: PASSWORD, name: 'Test User' },
@@ -183,6 +198,10 @@ function loadDb(): LocalDb {
           typeof user.open_to_chat === 'boolean'
             ? user.open_to_chat
             : fallbackById.get(user.id)?.open_to_chat === true,
+        basics_completed_at:
+          user.basics_completed_at ??
+          fallbackById.get(user.id)?.basics_completed_at ??
+          user.created_at,
       }))
       return {
         users,
@@ -192,6 +211,8 @@ function loadDb(): LocalDb {
         pools: parsed.pools ?? [],
         pool_memberships: parsed.pool_memberships ?? [],
         push_subscriptions: parsed.push_subscriptions ?? [],
+        user_blocks: parsed.user_blocks ?? [],
+        user_reports: parsed.user_reports ?? [],
         accounts: parsed.accounts ?? fallback.accounts,
       }
     }
@@ -402,6 +423,7 @@ export function createLocalSupabase(): SupabaseClient {
       pool_ids?: string[]
       p_name?: string
       p_code?: string
+      p_other_id?: string
       p_endpoint?: string
       p_p256dh?: string
       p_auth?: string
@@ -516,6 +538,22 @@ export function createLocalSupabase(): SupabaseClient {
         return Promise.resolve(ok(row))
       }
 
+      if (name === 'shared_pools') {
+        if (!sessionUserId || !args.p_other_id || args.p_other_id === sessionUserId) {
+          return Promise.resolve(ok([]))
+        }
+        const mine = new Set(
+          db.pool_memberships.filter((m) => m.user_id === sessionUserId).map((m) => m.pool_id),
+        )
+        const data = db.pools.filter((pool) => {
+          if (!mine.has(pool.id)) return false
+          return db.pool_memberships.some(
+            (m) => m.user_id === args.p_other_id && m.pool_id === pool.id && m.visible,
+          )
+        }).map((pool) => ({ id: pool.id, name: pool.name }))
+        return Promise.resolve(ok(data))
+      }
+
       if (name !== 'discover_profiles') {
         return Promise.resolve(fail(`Unknown rpc ${name}`))
       }
@@ -524,6 +562,16 @@ export function createLocalSupabase(): SupabaseClient {
       const poolIds = new Set(args.pool_ids ?? [])
       const data = db.users.filter((user) => {
         if (!user.is_active || user.id === viewerId) return false
+        if (
+          viewerId &&
+          db.user_blocks.some(
+            (b) =>
+              (b.blocker_id === viewerId && b.blocked_id === user.id) ||
+              (b.blocker_id === user.id && b.blocked_id === viewerId),
+          )
+        ) {
+          return false
+        }
         if (everyone && user.visible_in_everyone) return true
         return (db.pool_memberships ?? []).some(
           (m) => m.user_id === user.id && m.visible && poolIds.has(m.pool_id),

@@ -9,10 +9,12 @@ import { ChatsPage } from './pages/ChatsPage'
 import { ChatDetailPage } from './pages/ChatDetailPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { UserProfilePage } from './pages/UserProfilePage'
+import { BasicsPage } from './pages/BasicsPage'
 
 /**
  * Discover is public (matches the prototype's browsable swipe deck); signing
- * in is only required for messaging, chats, profile editing, and location.
+ * in is only required for messaging, chats, profile editing, location, and
+ * the first-run basics screen.
  */
 export default function App() {
   return (
@@ -26,6 +28,7 @@ export default function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route path="/location" element={<LocationPage />} />
+              <Route path="/basics" element={<BasicsPage />} />
               <Route path="/chats" element={<ChatsPage />} />
               <Route path="/chats/:userId" element={<ChatDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />

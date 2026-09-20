@@ -5,7 +5,7 @@ import { ComposeOverlay } from '../components/ComposeOverlay'
 import { ProfileCard } from '../components/ProfileCard'
 import { IconChat, IconRefresh, IconUsers, IconX } from '../lib/icons'
 import { sendMessage } from '../lib/messages'
-import { fetchDiscoverProfilesFiltered, fetchMyPools } from '../lib/pools'
+import { fetchDiscoverProfilesFiltered, fetchMyPools, fetchSharedPools, type SharedPool } from '../lib/pools'
 import {
   applyDiscoverSwipe,
   rankDiscoverProfiles,
@@ -32,7 +32,9 @@ export function DiscoverPage() {
 
   const [queue, setQueue] = useState<ProfileRow[] | null>(null)
   const [items, setItems] = useState<ProfileItemRow[]>([])
-  const [flying, setFlying] = useState<'left' | 'right' | null>(null)
+  const [cardMotion, setCardMotion] = useState<'in' | 'out' | null>(null)
+  const [sharedForId, setSharedForId] = useState<{ id: string; pools: SharedPool[] } | null>(null)
+  const advancingRef = useRef(false)
   const [fetchedLocation, setFetchedLocation] = useState<LatLng | null>(null)
   const [compose, setCompose] = useState<ComposeState | null>(null)
   const [myPools, setMyPools] = useState<MyPool[]>([])
@@ -85,11 +87,17 @@ export function DiscoverPage() {
   }, [user])
 
   const top = queue?.[0] ?? null
+  const sharedPools = top && user && sharedForId?.id === top.id ? sharedForId.pools : []
 
   useEffect(() => {
     if (!top) return
     void fetchProfileItems(top.id).then(setItems)
-  }, [top])
+    if (!user) return
+    const profileId = top.id
+    void fetchSharedPools(profileId)
+      .then((pools) => setSharedForId({ id: profileId, pools }))
+      .catch(() => setSharedForId({ id: profileId, pools: [] }))
+  }, [top, user])
 
   // Resume a message that was interrupted by a login redirect.
   useEffect(() => {
@@ -115,15 +123,24 @@ export function DiscoverPage() {
     setQueue(next.profiles)
   }
 
-  function pass() {
+  function advance(profileId: string, direction: SwipeDirection, persist: boolean) {
+    if (advancingRef.current) return
+    advancingRef.current = true
+    setCardMotion('out')
+    if (persist && user) void recordSwipe(user.id, profileId, direction).catch(console.error)
+    window.setTimeout(() => {
+      demote(profileId, direction)
+      setCardMotion('in')
+      window.setTimeout(() => {
+        setCardMotion(null)
+        advancingRef.current = false
+      }, 240)
+    }, 180)
+  }
+
+  function skip() {
     if (!top) return
-    const profileId = top.id
-    setFlying('left')
-    if (user) void recordSwipe(user.id, profileId, 'left').catch(console.error)
-    setTimeout(() => {
-      demote(profileId, 'left')
-      setFlying(null)
-    }, 220)
+    advance(top.id, 'left', Boolean(user))
   }
 
   function openCompose() {
@@ -150,11 +167,7 @@ export function DiscoverPage() {
     await recordSwipe(user.id, compose.profile.id, 'right')
     const profileId = compose.profile.id
     setCompose(null)
-    setFlying('right')
-    setTimeout(() => {
-      demote(profileId, 'right')
-      setFlying(null)
-    }, 220)
+    advance(profileId, 'right', false)
   }
 
   async function resetPassed() {
@@ -229,15 +242,24 @@ export function DiscoverPage() {
 
       {top && (
         <div id="cardSlot">
-          <div className={`card ${flying === 'left' ? 'fly-left' : ''} ${flying === 'right' ? 'fly-right' : ''}`}>
-            <ProfileCard profile={top} items={items} myLocation={myLocation} onComment={commentOnItem} />
+          <div
+            key={top.id}
+            className={`card ${cardMotion === 'out' ? 'advance-out' : ''} ${cardMotion === 'in' ? 'advance-in' : ''}`}
+          >
+            <ProfileCard
+              profile={top}
+              items={items}
+              myLocation={myLocation}
+              sharedPools={sharedPools}
+              onComment={commentOnItem}
+            />
           </div>
         </div>
       )}
 
       {top && (
         <div className="floating-actions">
-          <div className="float-btn pass" role="button" aria-label="Pass" onClick={pass}>
+          <div className="float-btn pass" role="button" aria-label="Skip" onClick={skip}>
             <IconX />
           </div>
           <div className="float-btn message" onClick={openCompose}>
