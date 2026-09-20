@@ -18,6 +18,7 @@ export type ProfileCompletenessCheck = {
  * Percent = (sum of weights of passing checks) / (sum of all weights).
  */
 export const PROFILE_COMPLETENESS_CHECKS: ProfileCompletenessCheck[] = [
+  // A letter in the icon is only a fallback — it is not a profile photo.
   { id: 'avatar', label: 'Profile photo', done: (profile) => filled(profile?.avatar_url) },
   { id: 'name', label: 'Display name', done: (profile) => filled(profile?.display_name) },
   { id: 'age', label: 'Age', done: (profile) => profile?.age != null && profile.age > 0 },

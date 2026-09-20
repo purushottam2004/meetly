@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { IconChat, IconProfile } from '../lib/icons'
+import { profileAvatarInitial } from '../lib/avatarInitial'
 import { countUnreadChats, subscribeToUnreadChanges } from '../lib/messages'
 import { profileCompletenessPercent } from '../lib/profileCompleteness'
 import {
@@ -24,9 +25,11 @@ export function AppShell() {
   const { user } = useAuth()
   const [rawUnreadCount, setRawUnreadCount] = useState(0)
   const [rawAvatarUrl, setRawAvatarUrl] = useState<string | null>(null)
+  const [rawDisplayName, setRawDisplayName] = useState<string | null>(null)
   const [completionPct, setCompletionPct] = useState(0)
   const unreadCount = user ? rawUnreadCount : 0
   const avatarUrl = user ? rawAvatarUrl : null
+  const avatarInitial = user ? profileAvatarInitial(rawDisplayName) : ''
   const ringPct = user ? completionPct : 0
 
   useEffect(() => {
@@ -41,6 +44,7 @@ export function AppShell() {
     if (!user) return
     void Promise.all([fetchMyProfile(user.id), fetchProfileItems(user.id)]).then(([profile, items]) => {
       setRawAvatarUrl(profile?.avatar_url ?? null)
+      setRawDisplayName(profile?.display_name ?? null)
       setCompletionPct(profileCompletenessPercent(profile, items))
     })
   }, [user, location.pathname])
@@ -108,7 +112,11 @@ export function AppShell() {
                     : undefined
                 }
               >
-                {!avatarUrl && <IconProfile />}
+                {avatarUrl ? null : avatarInitial ? (
+                  <span className="avatar-initial">{avatarInitial}</span>
+                ) : (
+                  <IconProfile />
+                )}
               </div>
             </div>
             {ringPct < 100 && <span className="avatar-completeness-pct">{ringPct}%</span>}
