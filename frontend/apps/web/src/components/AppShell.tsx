@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { IconChat, IconProfile } from '../lib/icons'
 import { countUnreadChats, subscribeToUnreadChanges } from '../lib/messages'
+import { profileCompletenessPercent } from '../lib/profileCompleteness'
 import {
   ensureDisplayNameFromAuth,
   fetchMyProfile,
+  fetchProfileItems,
   requestBrowserLocation,
   saveMyLocation,
   touchLastActive,
@@ -22,8 +24,10 @@ export function AppShell() {
   const { user } = useAuth()
   const [rawUnreadCount, setRawUnreadCount] = useState(0)
   const [rawAvatarUrl, setRawAvatarUrl] = useState<string | null>(null)
+  const [completionPct, setCompletionPct] = useState(0)
   const unreadCount = user ? rawUnreadCount : 0
   const avatarUrl = user ? rawAvatarUrl : null
+  const ringPct = user ? completionPct : 0
 
   useEffect(() => {
     if (!user) return
@@ -31,11 +35,14 @@ export function AppShell() {
     void ensureDisplayNameFromAuth(user.id, user.user_metadata)
   }, [user])
 
-  // Re-read on navigation so a freshly uploaded photo shows up as soon as the
-  // user leaves the profile screen.
+  // Re-read on navigation so a freshly uploaded photo / edited field updates
+  // the avatar and the completion ring as soon as the user leaves profile.
   useEffect(() => {
     if (!user) return
-    void fetchMyProfile(user.id).then((profile) => setRawAvatarUrl(profile?.avatar_url ?? null))
+    void Promise.all([fetchMyProfile(user.id), fetchProfileItems(user.id)]).then(([profile, items]) => {
+      setRawAvatarUrl(profile?.avatar_url ?? null)
+      setCompletionPct(profileCompletenessPercent(profile, items))
+    })
   }, [user, location.pathname])
 
   useEffect(() => {
@@ -86,17 +93,32 @@ export function AppShell() {
   return (
     <div className="app">
       <div className="header" id="mainHeader">
-        <div
-          className="icon-box avatar"
-          onClick={() => goTo('/profile')}
-          title="Profile & settings"
-          style={
-            avatarUrl
-              ? { backgroundImage: `url(${avatarUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : undefined
-          }
-        >
-          {!avatarUrl && <IconProfile />}
+        <div className="header-profile" onClick={() => goTo('/profile')}>
+          <div
+            className="avatar-completeness"
+            style={{ '--pct': ringPct } as CSSProperties}
+            title={user ? `Profile ${ringPct}% complete` : 'Profile & settings'}
+          >
+            <div className="avatar-completeness-gap">
+              <div
+                className="icon-box avatar"
+                style={
+                  avatarUrl
+                    ? { backgroundImage: `url(${avatarUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                    : undefined
+                }
+              >
+                {!avatarUrl && <IconProfile />}
+              </div>
+            </div>
+            {ringPct < 100 && <span className="avatar-completeness-pct">{ringPct}%</span>}
+          </div>
+          {ringPct < 100 && (
+            <div className="avatar-completeness-hint">
+              <strong>Tap to edit profile</strong>
+              Complete profiles are more likely to network
+            </div>
+          )}
         </div>
         <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           meetly

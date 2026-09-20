@@ -82,12 +82,13 @@ body {
   background: rgba(255,255,255,0.85); border-radius: 4px;
 }
 .header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
+  padding: 16px 16px 14px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  column-gap: 8px;
 }
 .header .logo {
   font-family: "Fraunces", "Inter", serif;
@@ -95,6 +96,20 @@ body {
   font-size: 20px;
   letter-spacing: 0.2px;
   color: var(--text);
+  justify-self: center;
+}
+.header > .icon-box {
+  justify-self: end;
+}
+.header-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  justify-self: start;
 }
 .icon-box {
   position: relative;
@@ -117,6 +132,64 @@ body {
   color: var(--surface);
 }
 .icon-box.avatar svg { width: 18px; height: 18px; }
+
+.avatar-completeness {
+  --pct: 0;
+  --ring-track: #E3E0DA;
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  padding: 2.5px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  background: conic-gradient(
+    from -90deg,
+    var(--primary) calc(var(--pct) * 1%),
+    var(--ring-track) 0
+  );
+}
+.avatar-completeness-gap {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  padding: 2px;
+  box-sizing: border-box;
+  background: var(--surface);
+}
+.avatar-completeness .icon-box.avatar {
+  width: 100%;
+  height: 100%;
+}
+.avatar-completeness-pct {
+  position: absolute;
+  top: -2px;
+  right: -11px;
+  min-width: 22px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  border: 2px solid var(--surface);
+  z-index: 1;
+}
+.avatar-completeness-hint {
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1.25;
+  color: var(--muted);
+  font-weight: 500;
+}
+.avatar-completeness-hint strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
 
 .unread-count-badge {
   position: absolute;
