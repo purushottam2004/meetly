@@ -39,19 +39,18 @@ Never put `SUPABASE_SECRET_KEY` or `VAPID_PRIVATE_KEY` in frontend env files.
 
 Google **login** credentials go in [`supabase/.env`](../supabase/.env.example), not here. See [supabase/SETUP_GUIDE.md — Google login (local)](../supabase/SETUP_GUIDE.md#google-login-local).
 
-Optional app-specific overrides: [`apps/web/.env.example`](./apps/web/.env.example), [`apps/web2/.env.example`](./apps/web2/.env.example).
+Optional app-specific overrides: [`apps/web/.env.example`](./apps/web/.env.example).
 
 ### Run
 
 ```bash
 pnpm dev                          # all apps in parallel
 pnpm --filter web run dev         # web only
-pnpm --filter web2 run dev        # web2 only
 ```
 
-Vite typically serves apps on ports **5173** / **5174**.
+Vite typically serves the app on port **5173**.
 
-On Vercel, keep a `vercel.json` with a rewrite of `/(.*)` → `/index.html` in the project Root Directory. Copies live at [`vercel.json`](./vercel.json), [`apps/web/vercel.json`](./apps/web/vercel.json), and [`apps/web2/vercel.json`](./apps/web2/vercel.json). Use the app copy when Root Directory is `frontend/apps/web` or `frontend/apps/web2`, and the frontend copy when Root Directory is `frontend`. Without it, client-side routes 404 on refresh.
+On Vercel, keep a `vercel.json` with a rewrite of `/(.*)` → `/index.html` in the project Root Directory. Copies live at [`vercel.json`](./vercel.json) and [`apps/web/vercel.json`](./apps/web/vercel.json). Use the app copy when Root Directory is `frontend/apps/web`, and the frontend copy when Root Directory is `frontend`. Without it, client-side routes 404 on refresh.
 
 Browser flows that need backend + DB belong in **[../e2e/](../e2e/README.md)**. Playwright will build + preview these apps (or reuse `pnpm dev` if it is already up). Contribution rules: [CONTRIBUTING.md](./CONTRIBUTING.md).
 

@@ -12,7 +12,6 @@ Stack setup: [../supabase/SETUP_GUIDE.md](../supabase/SETUP_GUIDE.md) · [../bac
 | Project | App | Port | Specs |
 | --- | --- | --- | --- |
 | `web` | `frontend/apps/web` | `5173` | `tests/smoke.spec.ts`, `tests/login.spec.ts`, `tests/hello.spec.ts` |
-| `web2` | `frontend/apps/web2` | `5174` | same shared specs |
 
 ## Prerequisites
 
@@ -29,7 +28,7 @@ Start these yourself before running tests:
    From `backend/`, e.g. `python main.py`, uvicorn, or `docker compose up`.  
    Needed for `hello.spec.ts`. See [backend/SETUP_GUIDE.md](../backend/SETUP_GUIDE.md).
 
-Playwright will **build + preview** `web` (`5173`) and `web2` (`5174`) automatically. If those servers are already up, they are reused (outside CI). `frontend/.env` must be filled so the preview build gets `VITE_SUPABASE_*` and `VITE_BACKEND_URL`.
+Playwright will **build + preview** `web` (`5173`) automatically. If that server is already up, it is reused (outside CI). `frontend/.env` must be filled so the preview build gets `VITE_SUPABASE_*` and `VITE_BACKEND_URL`.
 
 Embedded IDE browsers often cannot open local apps (`localhost` / `127.0.0.1`). Use these Playwright commands (or `curl`) to verify UI — do not treat a blank IDE-browser tab as the app being down.
 
@@ -49,9 +48,8 @@ Defaults match local seeds; `.env` is only needed if you change URLs or credenti
 From `e2e/`:
 
 ```bash
-npm test                          # all projects
-npm run test:web                  # web only
-npm run test:web2                 # web2 only
+npm test                          # all specs
+npm run test:web                  # web project only
 npm run test:headed               # all, headed, 1 worker
 npm run test:headed:video         # headed + record videos → videos/
 npm run test:headed:video:images  # video + distinct JPEG frames (ffmpeg)
@@ -66,7 +64,7 @@ Run a single file:
 
 ```bash
 npx playwright test --project=web tests/login.spec.ts
-npx playwright test --project=web2 tests/hello.spec.ts
+npx playwright test --project=web tests/hello.spec.ts
 ```
 
 `npm run test:browser` uses `playwright.browser-check.config.ts` — it does **not** start the apps. Use it to confirm the browser opens and your window manager rules (float / workspace) apply.

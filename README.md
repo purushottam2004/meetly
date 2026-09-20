@@ -5,7 +5,7 @@ This repo is a template with:
 - **Backend** — FastAPI (Python)
 - **Frontend** — React + TypeScript (Vite, pnpm workspace)
 - **Database** — Supabase (managed Postgres + Auth)
-- **E2E** — Playwright (`web` + `web2`)
+- **E2E** — Playwright (`web`)
 
 ## Docs
 

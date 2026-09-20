@@ -13,7 +13,7 @@ Cursor / VS Code: repo-root [`.vscode/settings.json`](../.vscode/settings.json) 
 
 ## Where to change code
 
-- **Product behaviour / pages** → `apps/<app>/` (`web`, `web2`)
+- **Product behaviour / pages** → `apps/<app>/` (`web`)
 - **Shared UI or auth** → `packages/ui`, `packages/auth` (coordinate — both apps depend on them)
 - Prefer existing patterns in `@repo/ui` and `@repo/auth` over one-off copies
 

@@ -2,7 +2,7 @@
 
 pnpm monorepo with shared packages and Vite React apps under `apps/`.
 
-Vercel SPA rewrites (`/(.*)` → `/index.html`) live in [`vercel.json`](./vercel.json), [`apps/web/vercel.json`](./apps/web/vercel.json), and [`apps/web2/vercel.json`](./apps/web2/vercel.json) so client-side routes do not 404 on refresh. Keep the copy that matches the Vercel Root Directory.
+Vercel SPA rewrites (`/(.*)` → `/index.html`) live in [`vercel.json`](./vercel.json) and [`apps/web/vercel.json`](./apps/web/vercel.json) so client-side routes do not 404 on refresh. Keep the copy that matches the Vercel Root Directory.
 
 ## Setup
 

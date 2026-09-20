@@ -9,7 +9,7 @@ import { test, expect } from "@playwright/test";
  *   3. Discover is browsable without signing in; Chats requires a session.
  *
  * Prerequisites:
- *   - Frontend running on BASE_URL / WEB2_BASE_URL (Playwright starts preview)
+ *   - Frontend running on BASE_URL (Playwright starts preview)
  */
 test.describe("Smoke Tests", () => {
   test("should load the homepage", async ({ page }) => {

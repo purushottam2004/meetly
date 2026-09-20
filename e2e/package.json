@@ -9,11 +9,8 @@
     "test:headed:video": "E2E_VIDEO=1 playwright test --headed --workers=1",
     "test:headed:video:images": "E2E_VIDEO=1 E2E_IMAGES=1 playwright test --headed --workers=1",
     "test:web": "playwright test --project=web",
-    "test:web2": "playwright test --project=web2",
     "test:web:headed": "playwright test --project=web --headed --workers=1",
-    "test:web2:headed": "playwright test --project=web2 --headed --workers=1",
     "test:web:headed:video": "E2E_VIDEO=1 playwright test --project=web --headed --workers=1",
-    "test:web2:headed:video": "E2E_VIDEO=1 playwright test --project=web2 --headed --workers=1",
     "test:browser": "playwright test --config=playwright.browser-check.config.ts --headed --workers=1",
     "test:ui": "playwright test --ui",
     "codegen": "playwright codegen"

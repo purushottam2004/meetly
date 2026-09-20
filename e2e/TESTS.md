@@ -4,7 +4,7 @@ Tracked Playwright specs under `tests/`. How to run them: [README.md](./README.m
 
 Recorder specs live in gitignored `video_test/` folders and are not listed here.
 
-## Shared (`--project=web` or `--project=web2`)
+## Shared (`--project=web`)
 
 Credentials: [`tests/helpers/auth.ts`](./tests/helpers/auth.ts) (defaults match `supabase/python_seeds/data/_001_data_users.py`).
 
@@ -16,7 +16,7 @@ Credentials: [`tests/helpers/auth.ts`](./tests/helpers/auth.ts) (defaults match 
 
 ## Browser check (`npm run test:browser`)
 
-Separate config (`playwright.browser-check.config.ts`). Does not start web or web2.
+Separate config (`playwright.browser-check.config.ts`). Does not start web.
 
 | File | What it covers |
 | --- | --- |

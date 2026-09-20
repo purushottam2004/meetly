@@ -93,7 +93,7 @@ The runner needs Docker (GitHub-hosted `ubuntu-latest` already has it).
 
 ### `e2e.yaml` — Playwright E2E
 
-Starts local Supabase, seeds users, starts the backend, then runs Playwright from `e2e/`. Playwright builds + previews `web` (`5173`) and `web2` (`5174`). Uses:
+Starts local Supabase, seeds users, starts the backend, then runs Playwright from `e2e/`. Playwright builds + previews `web` (`5173`). Uses:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`

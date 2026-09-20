@@ -87,7 +87,7 @@ Meetly signs in through **Supabase Auth → Google**, not the frontend. Put the 
 
    `http://127.0.0.1:54321/auth/v1/callback`
 
-   Optional JavaScript origins: `http://127.0.0.1:5173`, `http://127.0.0.1:5174`, `http://localhost:5173`, `http://localhost:5174`.
+   Optional JavaScript origins: `http://127.0.0.1:5173`, `http://localhost:5173`.
 3. Copy the client id and secret into [`supabase/.env`](./.env.example):
 
    ```

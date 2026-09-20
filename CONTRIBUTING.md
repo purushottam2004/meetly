@@ -159,7 +159,7 @@ Details: [supabase/CONTRIBUTING.md](./supabase/CONTRIBUTING.md).
 
 ```bash
 cd e2e
-npm test                 # or npm run test:web / test:web2
+npm test                 # or npm run test:web
 ```
 
 Details: [e2e/README.md](./e2e/README.md).
