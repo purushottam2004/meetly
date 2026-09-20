@@ -73,7 +73,7 @@ export default defineConfig({
   projects: [
     {
       name: "web",
-      testMatch: /(?:^|\/)(smoke|login|hello)\.spec\.ts$/,
+      testMatch: /(?:^|\/)(smoke|login|hello|push)\.spec\.ts$/,
       use: {
         ...devices["Desktop Chrome"],
         baseURL: WEB_URL,
