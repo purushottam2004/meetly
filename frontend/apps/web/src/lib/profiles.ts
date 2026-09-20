@@ -10,6 +10,33 @@ export async function fetchMyProfile(userId: string): Promise<ProfileRow | null>
   return data
 }
 
+/** Google (and other OAuth) name fields GoTrue stores on the auth user. */
+export function displayNameFromAuthMetadata(metadata: object | null | undefined): string | null {
+  if (!metadata) return null
+  const record = metadata as Record<string, unknown>
+  for (const key of ['full_name', 'name', 'given_name'] as const) {
+    const value = record[key]
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return null
+}
+
+/**
+ * First-time only: if the profile still has no display name, copy it from
+ * the Google account. Later visits and a name the user typed themselves
+ * are left alone.
+ */
+export async function ensureDisplayNameFromAuth(
+  userId: string,
+  metadata: object | null | undefined,
+): Promise<void> {
+  const profile = await fetchMyProfile(userId)
+  if (profile?.display_name?.trim()) return
+  const name = displayNameFromAuthMetadata(metadata)
+  if (!name) return
+  await saveMyProfileHeader(userId, { display_name: name })
+}
+
 /**
  * Randomized, staged discovery feed: nearest + most recently active first,
  * widening the radius/recency window one tier at a time (see

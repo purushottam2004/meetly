@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth'
 import { IconChat, IconProfile } from '../lib/icons'
 import { countUnreadChats, subscribeToUnreadChanges } from '../lib/messages'
 import {
+  ensureDisplayNameFromAuth,
   fetchMyProfile,
   requestBrowserLocation,
   saveMyLocation,
@@ -27,6 +28,7 @@ export function AppShell() {
   useEffect(() => {
     if (!user) return
     void touchLastActive(user.id)
+    void ensureDisplayNameFromAuth(user.id, user.user_metadata)
   }, [user])
 
   // Re-read on navigation so a freshly uploaded photo shows up as soon as the

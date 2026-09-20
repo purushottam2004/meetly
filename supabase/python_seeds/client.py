@@ -56,6 +56,7 @@ def create_or_get_auth_user(supabase: Client, user_data: dict) -> str:
     """
     Create an auth user (auto-confirmed) or return the existing auth user id.
     public.users is filled by the handle_new_user trigger (no email column).
+    If user_metadata has full_name / name / given_name, that becomes display_name.
     """
     email = user_data["email"]
     existing_id = get_auth_user_id_by_email(supabase, email)
