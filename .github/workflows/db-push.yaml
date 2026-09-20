@@ -1,4 +1,4 @@
-name: Deploy Migrations
+name: Deploy Database and Functions
 
 on:
   push:
@@ -32,4 +32,6 @@ jobs:
       - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
         working-directory: supabase
       - run: supabase db push
+        working-directory: supabase
+      - run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID" --use-api --yes
         working-directory: supabase

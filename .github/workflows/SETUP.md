@@ -110,9 +110,9 @@ The runner needs Docker (GitHub-hosted `ubuntu-latest` already has it). Local us
 | Secrets | None |
 
 
-### `db-push.yaml` — Deploy Migrations
+### `db-push.yaml` — Deploy Database and Functions
 
-Links the Supabase CLI to a hosted project and runs `supabase db push`. The GitHub Environment is chosen from the branch:
+Links the Supabase CLI to a hosted project, runs `supabase db push`, then deploys every Edge Function under `supabase/functions/` (`supabase functions deploy`). The GitHub Environment is chosen from the branch:
 
 | Branch | GitHub Environment |
 | --- | --- |
@@ -130,6 +130,8 @@ Use the same secret and variable **names** in both environments; GitHub injects 
 `SUPABASE_ACCESS_TOKEN` is an account token, so it can live once at **repository** secret scope. Put `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_ID` on **Production** (prod project) and **Preview** (staging project).
 
 This workflow does **not** use `SUPABASE_SECRET_KEY` or `SUPABASE_PUBLISHABLE_KEY`. Those are app keys; keep them for frontend/backend deploys.
+
+It also does **not** set Edge Function secrets. For message push, set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` on the hosted project (`supabase secrets set` or Dashboard → Edge Functions → Secrets) and put the matching public key in the frontend env as `VITE_VAPID_PUBLIC_KEY`. See [supabase/SETUP_GUIDE.md — Message push notifications](../../supabase/SETUP_GUIDE.md#message-push-notifications-web-push).
 
 | | |
 | --- | --- |

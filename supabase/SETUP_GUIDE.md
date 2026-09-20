@@ -124,6 +124,6 @@ docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' supabase_edge_runt
 
 The function imports from `esm.sh` and npm on first boot, so the container needs working TLS to the internet. Behind a TLS-intercepting VPN or proxy (Cato, Zscaler, and similar) the container does not trust the injected root even when the host does, and the call fails with `503 BOOT_ERROR`. `docker logs supabase_edge_runtime_<project-id>` shows `invalid peer certificate: UnknownIssuer`. Turn the VPN off or add its root CA to the container.
 
-Hosted project: generate a new pair (`npx web-push generate-vapid-keys`), set `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=...`, deploy `push-on-message`, and put the public key in the frontend env. Optional: a Database Webhook on `messages` INSERT to that function (service role JWT) covers sends that did not go through the web client.
+Hosted project: generate a new pair (`npx web-push generate-vapid-keys`), set `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=...`, and put the public key in the frontend env. Pushing `supabase/**` to `staging` or `main` deploys the function via [`.github/workflows/db-push.yaml`](../.github/workflows/db-push.yaml) (`supabase functions deploy`); you can also deploy by hand with `supabase functions deploy push-on-message`. Optional: a Database Webhook on `messages` INSERT to that function (service role JWT) covers sends that did not go through the web client.
 
 Contribution rules: [CONTRIBUTING.md](./CONTRIBUTING.md).

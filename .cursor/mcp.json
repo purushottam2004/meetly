@@ -2,10 +2,15 @@
   "mcpServers": {
     "supabase-local": {
       "url": "http://127.0.0.1:54321/mcp"
+    },
+    "supabase-stage": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=gttobbhxjfcpicnwemaq&read_only=true"
     }
     // "supabase-production": {
     //   "type": "http",
     //   "url": "https://mcp.supabase.com/mcp?project_ref=<your-remote-project-ref>&read_only=true"
     // }
+
   }
 }
