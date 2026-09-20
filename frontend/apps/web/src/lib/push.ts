@@ -1,7 +1,5 @@
 import { supabase } from './supabaseClient'
 
-const ASKED_KEY = 'meetly:push-permission-asked'
-
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
   const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'))
@@ -20,9 +18,11 @@ function canUsePush(): boolean {
 }
 
 /**
- * One browser prompt after first login. If they Allow, store a Web Push
- * subscription so new DMs can notify them with the app closed (Android Chrome;
- * iPhone only after Add to Home Screen).
+ * Prompt on login while permission is still `default`. Dismissing the prompt
+ * leaves it `default`, so the next login asks again; Allow and Block are both
+ * final and never re-prompt. If they Allow, store a Web Push subscription so
+ * new DMs can notify them with the app closed (Android Chrome; iPhone only
+ * after Add to Home Screen).
  */
 export async function enableMessagePush(): Promise<void> {
   try {
@@ -38,10 +38,7 @@ async function enableMessagePushInner(): Promise<void> {
   if (!vapidPublic) return
 
   if (Notification.permission === 'default') {
-    if (localStorage.getItem(ASKED_KEY) === '1') return
-    localStorage.setItem(ASKED_KEY, '1')
-    const result = await Notification.requestPermission()
-    if (result !== 'granted') return
+    await Notification.requestPermission()
   }
   if (Notification.permission !== 'granted') return
 
