@@ -25,6 +25,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -190,6 +192,8 @@ def main() -> None:
         logger.error("Docker is installed but not running. Start Docker, then re-run setup.py.")
         raise SystemExit(1)
     logger.info("Prerequisites OK")
+
+    load_dotenv(ENV_FILE)
 
     if supabase_is_running():
         logger.info("Supabase is already running")

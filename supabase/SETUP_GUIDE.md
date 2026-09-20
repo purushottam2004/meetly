@@ -78,4 +78,33 @@ uv run pytest python_tests/integration   # needs local Supabase; skips if it is 
 
 Use the keys in `.env` when configuring [backend](../backend/SETUP_GUIDE.md) and [frontend](../frontend/SETUP_GUIDE.md). Cursor reads [`../.cursor/mcp.json`](../.cursor/mcp.json); Claude Code reads [`../.mcp.json`](../.mcp.json) at the repo root (`"type": "http"` required).
 
+## Google login (local)
+
+Meetly signs in through **Supabase Auth → Google**, not the frontend. Put the OAuth client on `supabase/.env` (already wired in [`config.toml`](./config.toml) as `[auth.external.google]`). On first signup, `handle_new_user()` copies the Google account name into `public.users.display_name`; later logins do not overwrite a name the user has edited.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials) create a **Web application** OAuth client (or add this URI to an existing one).
+2. Authorized redirect URI (this is the local Auth callback, not the Vite app):
+
+   `http://127.0.0.1:54321/auth/v1/callback`
+
+   Optional JavaScript origins: `http://127.0.0.1:5173`, `http://127.0.0.1:5174`, `http://localhost:5173`, `http://localhost:5174`.
+3. Copy the client id and secret into [`supabase/.env`](./.env.example):
+
+   ```
+   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=....apps.googleusercontent.com
+   SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=...
+   ```
+
+4. Restart local Supabase so Auth interpolates those keys into `config.toml`
+   (`env(NAME)` is read from the **shell environment**, so source `.env` first):
+
+   ```bash
+   set -a && source .env && set +a
+   supabase stop && supabase start
+   ```
+
+   `python setup.py` loads `.env` before `supabase start` for you.
+
+`skip_nonce_check = true` is required for Google on local Auth. Do **not** put the Google client secret in `frontend/.env`.
+
 Contribution rules: [CONTRIBUTING.md](./CONTRIBUTING.md).

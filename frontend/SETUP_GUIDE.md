@@ -35,6 +35,8 @@ Vite loads shared env from this folder first, then `apps/<app>/.env*` (app value
 
 Never put `SUPABASE_SECRET_KEY` in frontend env files.
 
+Google **login** credentials go in [`supabase/.env`](../supabase/.env.example), not here. See [supabase/SETUP_GUIDE.md — Google login (local)](../supabase/SETUP_GUIDE.md#google-login-local).
+
 Optional app-specific overrides: [`apps/web/.env.example`](./apps/web/.env.example), [`apps/web2/.env.example`](./apps/web2/.env.example).
 
 ### Run
