@@ -95,15 +95,13 @@ Meetly signs in through **Supabase Auth → Google**, not the frontend. Put the 
    SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=...
    ```
 
-4. Restart local Supabase so Auth interpolates those keys into `config.toml`
-   (`env(NAME)` is read from the **shell environment**, so source `.env` first):
+4. Restart local Supabase so Auth interpolates those keys into `config.toml`:
 
    ```bash
-   set -a && source .env && set +a
    supabase stop && supabase start
    ```
 
-   `python setup.py` loads `.env` before `supabase start` for you.
+   The CLI reads this folder's `.env` (then `.env.local`) when it resolves `env(NAME)`, so you do **not** need to source anything. Shell variables still win over the file when both set the same name.
 
 `skip_nonce_check = true` is required for Google on local Auth. Do **not** put the Google client secret in `frontend/.env`.
 
@@ -113,7 +111,18 @@ After sign-in the web app asks once for notification permission. New DMs then no
 
 Local VAPID keys live in [`.env.example`](./.env.example) (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`) and must match `VITE_VAPID_PUBLIC_KEY` in the frontend env. `python setup.py` writes the local pair into `.env` if it is missing. Edge Function secrets are wired in [`config.toml`](./config.toml) (`[edge_runtime.secrets]`).
 
-Apply the `push_subscriptions` migration (`supabase db reset` or `supabase migration up`), restart local Supabase so the function picks up secrets, then copy the public key into `frontend/.env`.
+Apply the `push_subscriptions` migration (`supabase db reset` or `supabase migration up`), then copy the public key into `frontend/.env`.
+
+A full `supabase stop && supabase start` is required after adding or editing an Edge Function or its secrets. `supabase db reset` only recycles the database container, so the edge runtime keeps serving whatever it was started with — a function added since then returns **404**, and `[edge_runtime.secrets]` values added since then are missing. Check with:
+
+```bash
+docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' supabase_edge_runtime_<project-id> \
+  | grep -E 'VAPID|FUNCTIONS_CONFIG'
+```
+
+`SUPABASE_INTERNAL_FUNCTIONS_CONFIG={}` means no function is registered.
+
+The function imports from `esm.sh` and npm on first boot, so the container needs working TLS to the internet. Behind a TLS-intercepting VPN or proxy (Cato, Zscaler, and similar) the container does not trust the injected root even when the host does, and the call fails with `503 BOOT_ERROR`. `docker logs supabase_edge_runtime_<project-id>` shows `invalid peer certificate: UnknownIssuer`. Turn the VPN off or add its root CA to the container.
 
 Hosted project: generate a new pair (`npx web-push generate-vapid-keys`), set `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=...`, deploy `push-on-message`, and put the public key in the frontend env. Optional: a Database Webhook on `messages` INSERT to that function (service role JWT) covers sends that did not go through the web client.
 
