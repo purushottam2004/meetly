@@ -110,22 +110,30 @@ The runner needs Docker (GitHub-hosted `ubuntu-latest` already has it). Local us
 | Secrets | None |
 
 
-### `db-push.yaml` — Deploy Migrations to Production
+### `db-push.yaml` — Deploy Migrations
 
-Links the Supabase CLI to a hosted project and runs `supabase db push`. Uses the GitHub Environment named `main`.
+Links the Supabase CLI to a hosted project and runs `supabase db push`. The GitHub Environment is chosen from the branch:
 
-Create that environment under **Settings → Environments → New environment** (`main`), then add repository or environment secrets:
-
-| Secret | Where to get it |
+| Branch | GitHub Environment |
 | --- | --- |
-| `SUPABASE_ACCESS_TOKEN` | [Supabase access tokens](https://supabase.com/dashboard/account/tokens) |
-| `PRODUCTION_PROJECT_ID` | Project Settings → General → Reference ID |
-| `PRODUCTION_DB_PASSWORD` | Project Settings → Database → Database password |
+| `main` | `Production` |
+| `staging` | `Preview` |
+
+Use the same secret and variable **names** in both environments; GitHub injects that environment’s values into the job.
+
+| Name | Type | Where to get it |
+| --- | --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | Secret (repo or each environment) | [Supabase access tokens](https://supabase.com/dashboard/account/tokens) |
+| `SUPABASE_DB_PASSWORD` | Secret (each environment) | Project Settings → Database → Database password |
+| `SUPABASE_PROJECT_ID` | Variable (each environment) | Project Settings → General → Reference ID |
+
+`SUPABASE_ACCESS_TOKEN` is an account token, so it can live once at **repository** secret scope. Put `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_ID` on **Production** (prod project) and **Preview** (staging project).
+
+This workflow does **not** use `SUPABASE_SECRET_KEY` or `SUPABASE_PUBLISHABLE_KEY`. Those are app keys; keep them for frontend/backend deploys.
 
 | | |
 | --- | --- |
-| Triggers | Push to `main` touching `supabase/**`; manual dispatch |
-| Secrets | The three above |
+| Triggers | Push to `main` or `staging` touching `supabase/**` (or this workflow file); manual dispatch |
+| Secrets / vars | The three above, resolved from the selected environment |
 
-
-Do not enable this until the secrets and `main` environment exist, or the job will fail on an empty project link.
+The job will fail until each environment has `SUPABASE_PROJECT_ID` and `SUPABASE_DB_PASSWORD`, and an access token is available.
