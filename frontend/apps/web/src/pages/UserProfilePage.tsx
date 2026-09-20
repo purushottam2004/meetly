@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { ProfileCard } from '../components/ProfileCard'
+import { UserProfileSkeleton } from '../components/skeletons'
 import { IconArrowLeft } from '../lib/icons'
 import { fetchSharedPools, type SharedPool } from '../lib/pools'
 import { fetchMyProfile, fetchProfileItems } from '../lib/profiles'
@@ -47,7 +48,7 @@ export function UserProfilePage() {
   }
 
   if (profile === undefined) {
-    return <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
+    return <UserProfileSkeleton backTo={userId ? `/chats/${userId}` : '/chats'} />
   }
 
   if (!profile) {

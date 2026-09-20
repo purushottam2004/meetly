@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { LoginForm } from '@repo/auth'
+import { LoginSkeleton } from '../components/skeletons'
 import { IconArrowLeft, IconGoogle } from '../lib/icons'
 import { resumeAfterAuth, type AuthFlowState } from '../lib/authFlow'
 import { isLocalEnvironment } from '../lib/environment'
@@ -24,6 +25,10 @@ export function LoginPage() {
   async function handleGoogleLogin() {
     const redirectTo = window.location.origin + (state?.from?.pathname ?? '/')
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
+  }
+
+  if (loading) {
+    return <LoginSkeleton />
   }
 
   return (

@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { SocialRow } from '../components/SocialRow'
 import { VisibilityChoice } from '../components/VisibilityChoice'
+import { ProfileSkeleton } from '../components/skeletons'
 import {
   createdPoolCount,
   checkPoolName,
   createPool,
   fetchMyPools,
   joinPool,
+  leavePool,
   MAX_CUSTOM_POOLS,
   setEveryoneVisible,
   setPoolVisible,
@@ -207,8 +209,8 @@ export function ProfilePage() {
       await reloadPools()
     } catch (err) {
       const raw = err instanceof Error ? err.message : ''
-      if (/at most 3/i.test(raw)) setPoolError(raw)
-      else setPoolError('Pool does not exist')
+      if (/at most 3/i.test(raw)) setPoolError('You can be in at most 3 groups')
+      else setPoolError('Group does not exist')
     } finally {
       setPoolBusy(false)
     }
@@ -244,7 +246,23 @@ export function ProfilePage() {
         setPoolError('That name is taken')
         return
       }
-      setPoolError(raw || 'Could not create pool')
+      setPoolError(raw || 'Could not create group')
+    } finally {
+      setPoolBusy(false)
+    }
+  }
+
+  async function handleLeavePool(pool: MyPool) {
+    if (!user) return
+    setPoolBusy(true)
+    setPoolError(null)
+    setPools((current) => current.filter((row) => row.id !== pool.id))
+    try {
+      await leavePool(user.id, pool.id)
+      await reloadPools()
+    } catch (err) {
+      await reloadPools()
+      setPoolError(err instanceof Error ? err.message : 'Could not remove group')
     } finally {
       setPoolBusy(false)
     }
@@ -270,7 +288,7 @@ export function ProfilePage() {
   }
 
   if (!profile) {
-    return <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
+    return <ProfileSkeleton />
   }
 
   return (
@@ -438,7 +456,7 @@ export function ProfilePage() {
         </div>
 
         <div className="pool-line">
-          <span>Join pool</span>
+          <span>Join group</span>
           <input
             type="text"
             value={joinCode}
@@ -459,7 +477,7 @@ export function ProfilePage() {
         {user && createdPoolCount(user.id, pools) < MAX_CUSTOM_POOLS && pools.length < MAX_CUSTOM_POOLS && (
           <>
             <div className="pool-line">
-              <span>Create pool</span>
+              <span>Create group</span>
               <input
                 type="text"
                 value={newPoolName}
@@ -499,6 +517,24 @@ export function ProfilePage() {
               </div>
             )}
           </>
+        )}
+        {pools.length > 0 && (
+          <div className="pool-remove-list">
+            {pools.map((pool) => (
+              <div className="pool-remove-row" key={pool.id}>
+                <span>{pool.name}</span>
+                <button
+                  type="button"
+                  className="pool-remove-btn"
+                  aria-label={`Remove ${pool.name}`}
+                  disabled={poolBusy}
+                  onClick={() => void handleLeavePool(pool)}
+                >
+                  <IconTrash />
+                </button>
+              </div>
+            ))}
+          </div>
         )}
         {poolError && <p className="pool-error">{poolError}</p>}
         <div className="settings-row danger" onClick={() => void signOut().then(() => navigate('/'))}>

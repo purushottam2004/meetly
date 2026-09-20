@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { VisibilityChoice } from '../components/VisibilityChoice'
+import { BasicsSkeleton } from '../components/skeletons'
 import { resumeAfterAuth, type AuthFlowState } from '../lib/authFlow'
 import { profileAvatarInitial } from '../lib/avatarInitial'
 import { IconCamera } from '../lib/icons'
@@ -89,7 +90,7 @@ export function BasicsPage() {
   }
 
   if (!ready) {
-    return <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
+    return <BasicsSkeleton />
   }
 
   return (

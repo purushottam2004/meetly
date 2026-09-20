@@ -62,6 +62,15 @@ export async function setPoolVisible(userId: string, poolId: string, visible: bo
   if (error) throw error
 }
 
+export async function leavePool(userId: string, poolId: string): Promise<void> {
+  const { error } = await supabase
+    .from('pool_memberships')
+    .delete()
+    .eq('user_id', userId)
+    .eq('pool_id', poolId)
+  if (error) throw error
+}
+
 export async function setEveryoneVisible(userId: string, visible: boolean): Promise<void> {
   const { error } = await supabase.from('users').update({ visible_in_everyone: visible }).eq('id', userId)
   if (error) throw error

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { ChatDetailSkeleton } from '../components/skeletons'
 import { IconArrowLeft, IconCamera, IconLightbulb, IconMore, IconSend } from '../lib/icons'
 import { shouldSendOnEnter } from '../lib/keyboard'
 import { fetchThread, markThreadSeen, sendMessage, subscribeToThread } from '../lib/messages'
@@ -33,6 +34,7 @@ export function ChatDetailPage() {
 
   const [otherProfile, setOtherProfile] = useState<ProfileRow | null>(null)
   const [messages, setMessages] = useState<MessageRow[]>([])
+  const [loadedThreadUserId, setLoadedThreadUserId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [tipsExpanded, setTipsExpanded] = useState(false)
   const [currentTipIndex] = useState(() => Math.floor(Math.random() * TIPS.length))
@@ -64,10 +66,16 @@ export function ChatDetailPage() {
 
   useEffect(() => {
     if (!user || !otherUserId) return
-    void fetchThread(user.id, otherUserId).then((thread) => {
-      setMessages(thread)
-      void markThreadSeen(user.id, otherUserId)
-    })
+    void fetchThread(user.id, otherUserId)
+      .then((thread) => {
+        setMessages(thread)
+        setLoadedThreadUserId(otherUserId)
+        void markThreadSeen(user.id, otherUserId)
+      })
+      .catch(() => {
+        setMessages([])
+        setLoadedThreadUserId(otherUserId)
+      })
     return subscribeToThread(user.id, otherUserId, (message) => {
       setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]))
       if (message.recipient_id === user.id) {
@@ -152,6 +160,10 @@ export function ChatDetailPage() {
   }
 
   const name = otherProfile?.display_name || otherProfile?.username || 'Someone'
+
+  if (!otherUserId || loadedThreadUserId !== otherUserId) {
+    return <ChatDetailSkeleton />
+  }
 
   return (
     <div className="screen active" id="screen-chat-detail">

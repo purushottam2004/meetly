@@ -442,11 +442,11 @@ export function createLocalSupabase(): SupabaseClient {
       if (name === 'create_pool') {
         if (!sessionUserId) return Promise.resolve(fail('Not authenticated'))
         const trimmed = (args.p_name ?? '').trim().toUpperCase()
-        if (!trimmed) return Promise.resolve(fail('Pool name is required'))
+        if (!trimmed) return Promise.resolve(fail('Group name is required'))
         const createdCount = db.pools.filter((p) => p.created_by === sessionUserId).length
         const memberCount = db.pool_memberships.filter((m) => m.user_id === sessionUserId).length
-        if (createdCount >= 3) return Promise.resolve(fail('You can create at most 3 pools'))
-        if (memberCount >= 3) return Promise.resolve(fail('You can be in at most 3 pools'))
+        if (createdCount >= 3) return Promise.resolve(fail('You can create at most 3 groups'))
+        if (memberCount >= 3) return Promise.resolve(fail('You can be in at most 3 groups'))
         if (db.pools.some((p) => p.name.trim().toLowerCase() === trimmed.toLowerCase())) {
           return Promise.resolve(fail('That name is taken'))
         }
@@ -471,16 +471,16 @@ export function createLocalSupabase(): SupabaseClient {
       if (name === 'join_pool') {
         if (!sessionUserId) return Promise.resolve(fail('Not authenticated'))
         const code = (args.p_code ?? '').trim().toUpperCase().replace(/\s+/g, '')
-        if (!code) return Promise.resolve(fail('Pool does not exist'))
+        if (!code) return Promise.resolve(fail('Group does not exist'))
         const compact = (value: string) => value.trim().toUpperCase().replace(/\s+/g, '')
         const found = db.pools.find(
           (p) => compact(p.join_code) === code || compact(p.name) === code,
         )
-        if (!found) return Promise.resolve(fail('Pool does not exist'))
+        if (!found) return Promise.resolve(fail('Group does not exist'))
         const already = db.pool_memberships.some((m) => m.user_id === sessionUserId && m.pool_id === found.id)
         if (!already) {
           if (db.pool_memberships.filter((m) => m.user_id === sessionUserId).length >= 3) {
-            return Promise.resolve(fail('You can be in at most 3 pools'))
+            return Promise.resolve(fail('You can be in at most 3 groups'))
           }
           db.pool_memberships.push({
             user_id: sessionUserId,

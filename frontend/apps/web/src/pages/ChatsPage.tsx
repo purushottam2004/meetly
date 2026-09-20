@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { ChatsSkeleton } from '../components/skeletons'
 import { IconArrowLeft } from '../lib/icons'
 import {
   fetchMessagesFor,
@@ -24,25 +25,31 @@ export function ChatsPage() {
     if (!user) return
 
     const load = () =>
-      void fetchMessagesFor(user.id).then(async (messages) => {
-        const hidden = await fetchHiddenUserIds(user.id)
-        setBlockedIds(hidden)
-        const grouped = groupIntoConversations(user.id, messages)
-        setConversations(grouped)
+      void fetchMessagesFor(user.id)
+        .then(async (messages) => {
+          const hidden = await fetchHiddenUserIds(user.id)
+          setBlockedIds(hidden)
+          const grouped = groupIntoConversations(user.id, messages)
+          setConversations(grouped)
 
-        const entries = await Promise.all(
-          grouped.map(async (c) => [c.otherUserId, await fetchMyProfile(c.otherUserId)] as const),
-        )
-        const map = new Map<string, ProfileRow>()
-        for (const [id, profile] of entries) {
-          if (profile) map.set(id, profile)
-        }
-        setProfiles(map)
-      })
+          const entries = await Promise.all(
+            grouped.map(async (c) => [c.otherUserId, await fetchMyProfile(c.otherUserId)] as const),
+          )
+          const map = new Map<string, ProfileRow>()
+          for (const [id, profile] of entries) {
+            if (profile) map.set(id, profile)
+          }
+          setProfiles(map)
+        })
+        .catch(() => setConversations([]))
 
     load()
     return subscribeToUnreadChanges(user.id, load)
   }, [user])
+
+  if (conversations === null) {
+    return <ChatsSkeleton />
+  }
 
   return (
     <div className="screen active" id="screen-chats">

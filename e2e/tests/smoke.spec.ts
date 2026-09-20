@@ -58,6 +58,24 @@ test.describe("Smoke Tests", () => {
     await expect(page).toHaveURL("/");
     await expect(page.locator("#screen-discover")).toBeVisible();
     await expect(page.getByRole("button", { name: "Everyone" })).toBeVisible();
+    await expect(page.getByText("Groups you are visible to")).toBeVisible();
+    await expect(page.getByText("Groups visible to you")).toBeVisible();
+  });
+
+  test("discover group filter choice survives reload", async ({ page }) => {
+    await page.goto("/");
+
+    const everyone = page.getByRole("button", { name: "Everyone" });
+    await expect(everyone).toBeVisible();
+    await expect(everyone).toHaveClass(/\bon\b/);
+
+    await everyone.click();
+    await expect(everyone).not.toHaveClass(/\bon\b/);
+
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Everyone" })).not.toHaveClass(
+      /\bon\b/,
+    );
   });
 
   test("skipping a profile keeps Discover from going empty", async ({ page }) => {

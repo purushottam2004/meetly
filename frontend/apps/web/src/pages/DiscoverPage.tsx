@@ -1,10 +1,18 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { ComposeOverlay } from '../components/ComposeOverlay'
 import { ProfileCard } from '../components/ProfileCard'
+import { DiscoverSkeleton } from '../components/skeletons'
 import { IconChat, IconRefresh, IconUsers, IconX } from '../lib/icons'
 import { sendMessage } from '../lib/messages'
+import {
+  DEFAULT_DISCOVER_GROUP_FILTERS,
+  getDiscoverGroupFilters,
+  subscribeDiscoverGroupFilters,
+  toggleDiscoverEveryone,
+  toggleDiscoverPool,
+} from '../lib/discoverFilters'
 import { fetchDiscoverProfilesFiltered, fetchMyPools, fetchSharedPools, type SharedPool } from '../lib/pools'
 import {
   applyDiscoverSwipe,
@@ -35,13 +43,35 @@ export function DiscoverPage() {
   const [cardMotion, setCardMotion] = useState<'in' | 'out' | null>(null)
   const [sharedForId, setSharedForId] = useState<{ id: string; pools: SharedPool[] } | null>(null)
   const advancingRef = useRef(false)
-  const [fetchedLocation, setFetchedLocation] = useState<LatLng | null>(null)
   const [compose, setCompose] = useState<ComposeState | null>(null)
-  const [myPools, setMyPools] = useState<MyPool[]>([])
-  const [includeEveryone, setIncludeEveryone] = useState(true)
-  const [selectedPoolIds, setSelectedPoolIds] = useState<string[]>([])
+  const [poolsForUser, setPoolsForUser] = useState<{ userId: string; pools: MyPool[] } | null>(null)
+  const [profileForUser, setProfileForUser] = useState<{
+    userId: string
+    visibleInEveryone: boolean
+    location: LatLng | null
+  } | null>(null)
   const [swipeById, setSwipeById] = useState<DiscoverSwipeRanks>({})
   const swipeByIdRef = useRef(swipeById)
+
+  const filterUserId = loading ? undefined : (user?.id ?? null)
+  const filters = useSyncExternalStore(
+    subscribeDiscoverGroupFilters,
+    () =>
+      filterUserId === undefined
+        ? DEFAULT_DISCOVER_GROUP_FILTERS
+        : getDiscoverGroupFilters(filterUserId),
+    () => DEFAULT_DISCOVER_GROUP_FILTERS,
+  )
+  const includeEveryone = filters.includeEveryone
+  const selectedPoolIds = filters.poolIds
+  const myPools = user && poolsForUser?.userId === user.id ? poolsForUser.pools : []
+  const visibleInEveryone = user
+    ? profileForUser?.userId === user.id
+      ? profileForUser.visibleInEveryone
+      : true
+    : false
+  const fetchedLocation =
+    user && profileForUser?.userId === user.id ? profileForUser.location : null
 
   useEffect(() => {
     swipeByIdRef.current = swipeById
@@ -64,25 +94,32 @@ export function DiscoverPage() {
 
   useEffect(() => {
     if (!user) return
-    void fetchMyPools(user.id).then(setMyPools)
+    const userId = user.id
+    void fetchMyPools(userId).then((pools) => setPoolsForUser({ userId, pools }))
   }, [user, routerLocation.pathname])
 
   // Wait for the session to settle: fetching while auth is still loading sends
   // viewer_id = null, and an anonymous feed has no one to exclude — so you'd
   // get your own card back.
   useEffect(() => {
-    if (loading) return
+    if (loading || filterUserId === undefined) return
     void loadQueue()
     // loadQueue reads the latest filter/auth values; listing those as deps is enough.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, user?.id, includeEveryone, selectedPoolIds])
+  }, [loading, filterUserId, includeEveryone, selectedPoolIds])
 
   useEffect(() => {
     if (!user) return
-    void fetchMyProfile(user.id).then((profile) => {
-      if (profile?.latitude != null && profile.longitude != null) {
-        setFetchedLocation({ lat: profile.latitude, lng: profile.longitude })
-      }
+    const userId = user.id
+    void fetchMyProfile(userId).then((profile) => {
+      setProfileForUser({
+        userId,
+        visibleInEveryone: profile?.visible_in_everyone !== false,
+        location:
+          profile?.latitude != null && profile.longitude != null
+            ? { lat: profile.latitude, lng: profile.longitude }
+            : null,
+      })
     })
   }, [user])
 
@@ -184,41 +221,55 @@ export function DiscoverPage() {
     await loadQueue()
   }
 
-  function togglePoolChip(poolId: string) {
-    setSelectedPoolIds((current) =>
-      current.includes(poolId) ? current.filter((id) => id !== poolId) : [...current, poolId],
-    )
-  }
+  const visibleGroupNames = [
+    ...(user && visibleInEveryone ? ['Everyone'] : []),
+    ...myPools.filter((pool) => pool.visible).map((pool) => pool.name),
+  ]
+  const filterOwnerId = user?.id ?? null
 
   const filterBar = (
-    <div className="discover-filters" role="tablist" aria-label="Pool filters">
-      <button
-        type="button"
-        className={`discover-filter-chip ${includeEveryone ? 'on' : ''}`}
-        onClick={() => setIncludeEveryone((value) => !value)}
-      >
-        Everyone
-      </button>
-      {(user ? myPools : []).map((pool) => (
-        <button
-          type="button"
-          key={pool.id}
-          className={`discover-filter-chip ${selectedPoolIds.includes(pool.id) ? 'on' : ''}`}
-          onClick={() => togglePoolChip(pool.id)}
-        >
-          {pool.name}
-        </button>
-      ))}
+    <div className="discover-filters" aria-label="Group filters">
+      <div className="discover-filter-section">
+        <div className="discover-filter-label">Groups you are visible to</div>
+        <div className="discover-filter-chips">
+          {visibleGroupNames.length === 0 ? (
+            <span className="discover-filter-empty">None yet</span>
+          ) : (
+            visibleGroupNames.map((name) => (
+              <span className="discover-visible-chip" key={name}>
+                {name}
+              </span>
+            ))
+          )}
+        </div>
+      </div>
+      <div className="discover-filter-section">
+        <div className="discover-filter-label">Groups visible to you</div>
+        <div className="discover-filter-chips" role="tablist" aria-label="Groups visible to you">
+          <button
+            type="button"
+            className={`discover-filter-chip ${includeEveryone ? 'on' : ''}`}
+            onClick={() => toggleDiscoverEveryone(filterOwnerId)}
+          >
+            Everyone
+          </button>
+          {myPools.map((pool) => (
+            <button
+              type="button"
+              key={pool.id}
+              className={`discover-filter-chip ${selectedPoolIds.includes(pool.id) ? 'on' : ''}`}
+              onClick={() => toggleDiscoverPool(filterOwnerId, pool.id)}
+            >
+              {pool.name}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 
   if (queue === null) {
-    return (
-      <div className="screen active" id="screen-discover">
-        {filterBar}
-        <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
-      </div>
-    )
+    return <DiscoverSkeleton filters={filterBar} />
   }
 
   return (

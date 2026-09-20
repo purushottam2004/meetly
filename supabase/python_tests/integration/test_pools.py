@@ -214,3 +214,32 @@ def test_create_pool_name_is_the_join_code(admin_client):
         admin_client.table("pools").delete().eq("name", name).execute()
         admin_client.auth.admin.delete_user(creator.id)
         admin_client.auth.admin.delete_user(joiner.id)
+
+
+def test_member_can_leave_pool(admin_client):
+    suffix = uuid.uuid4().hex[:8].upper()
+    name = f"LEAVE {suffix}"
+    email = f"leave_{suffix.lower()}@example.com"
+
+    member = admin_client.auth.admin.create_user(
+        {"email": email, "password": PASSWORD, "email_confirm": True}
+    ).user
+
+    try:
+        client = create_client(SUPABASE_URL, _publishable_key())
+        client.auth.sign_in_with_password({"email": email, "password": PASSWORD})
+        created = _rpc_row(client.rpc("create_pool", {"p_name": name}).execute().data)
+
+        client.table("pool_memberships").delete().eq("pool_id", created["id"]).execute()
+        remaining = (
+            admin_client.table("pool_memberships")
+            .select("*")
+            .eq("user_id", member.id)
+            .eq("pool_id", created["id"])
+            .execute()
+            .data
+        )
+        assert remaining == []
+    finally:
+        admin_client.table("pools").delete().eq("name", name).execute()
+        admin_client.auth.admin.delete_user(member.id)
