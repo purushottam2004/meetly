@@ -1,6 +1,6 @@
 import { compressImage, PROFILE_PHOTO_COMPRESS } from './compressImage'
 import { supabase } from './supabaseClient'
-import type { ProfileItemKind, ProfileItemRow, ProfileRow, SwipeDirection } from './types'
+import type { ProfileItemKind, ProfileItemRow, ProfileRow, SwipeDirection, SwipeRow } from './types'
 
 export type ProfilePhotoKind = keyof typeof PROFILE_PHOTO_COMPRESS
 
@@ -41,12 +41,17 @@ export async function ensureDisplayNameFromAuth(
  * Randomized, staged discovery feed: nearest + most recently active first,
  * widening the radius/recency window one tier at a time (see
  * public.discover_profiles() / DISCOVER_TIERS) until a tier has at least one
- * not-yet-passed person. People you've already messaged stay in the feed;
- * only a pass removes someone. Anonymous visitors (currentUserId null) and
- * viewers without a saved location fall straight through to everyone.
+ * person the viewer has not swiped. Chosen and rejected people stay in the
+ * result so the client can rank untouched → chosen → rejected. Anonymous
+ * visitors (currentUserId null) and viewers without a saved location fall
+ * straight through to everyone.
  */
 export async function fetchDiscoverProfiles(currentUserId: string | null): Promise<ProfileRow[]> {
-  const { data, error } = await supabase.rpc('discover_profiles', { viewer_id: currentUserId })
+  const { data, error } = await supabase.rpc('discover_profiles', {
+    viewer_id: currentUserId,
+    include_everyone: true,
+    pool_ids: [],
+  })
   if (error) throw error
   return data ?? []
 }
@@ -85,6 +90,12 @@ export async function saveMyProfileHeader(userId: string, fields: ProfileHeaderF
 /** "Activate Profile" toggle — off by default; only active profiles show up in Discover. */
 export async function saveMyActiveState(userId: string, isActive: boolean): Promise<void> {
   const { error } = await supabase.from('users').update({ is_active: isActive }).eq('id', userId)
+  if (error) throw error
+}
+
+/** "Open to chat" toggle — off by default; shown as a chip next to last-seen. */
+export async function saveMyOpenToChat(userId: string, openToChat: boolean): Promise<void> {
+  const { error } = await supabase.from('users').update({ open_to_chat: openToChat }).eq('id', userId)
   if (error) throw error
 }
 
@@ -160,6 +171,12 @@ export async function reorderProfileItems(items: { id: string; position: number 
   await Promise.all(items.map((item) => updateProfileItem(item.id, { position: item.position })))
 }
 
+export async function fetchMySwipes(swiperId: string): Promise<SwipeRow[]> {
+  const { data, error } = await supabase.from('swipes').select('*').eq('swiper_id', swiperId)
+  if (error) throw error
+  return data ?? []
+}
+
 export async function recordSwipe(
   swiperId: string,
   swipedId: string,
@@ -171,7 +188,7 @@ export async function recordSwipe(
   if (error) throw error
 }
 
-/** Powers the Discover empty-state "check back later" reset: re-surfaces people you passed on. */
+/** Clears left swipes so previously rejected people rank as untouched again. */
 export async function clearMyPassedSwipes(swiperId: string): Promise<void> {
   const { error } = await supabase
     .from('swipes')

@@ -78,6 +78,10 @@ export async function sendMessage(
     .select()
     .single()
   if (error) throw error
+  void supabase.functions.invoke('push-on-message', { body: { messageId: data.id } }).then(
+    () => undefined,
+    () => undefined,
+  )
   return data
 }
 

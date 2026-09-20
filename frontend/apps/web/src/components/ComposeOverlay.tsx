@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ProfileRow, Quote } from '../lib/types'
 import { IconCamera, IconClose, IconSend } from '../lib/icons'
+import { shouldSendOnEnter } from '../lib/keyboard'
 
 type ComposeOverlayProps = {
   profile: ProfileRow
@@ -57,8 +58,9 @@ export function ComposeOverlay({ profile, quote, onClearQuote, onCancel, onSend 
           placeholder="Say something..."
           value={text}
           onChange={(event) => setText(event.target.value)}
+          enterKeyHint="enter"
           onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
+            if (shouldSendOnEnter(event)) {
               event.preventDefault()
               void handleSend()
             }

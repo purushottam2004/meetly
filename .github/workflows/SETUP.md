@@ -47,6 +47,8 @@ Runs `pnpm build` in `frontend/`. Copies `frontend/.env.example` to `.env`, then
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_BACKEND_URL`
 
+`VITE_VAPID_PUBLIC_KEY` comes from `.env.example` when present.
+
 | | |
 | --- | --- |
 | Triggers | Push/PR touching `frontend/**` on `main` or `stage`; manual dispatch |

@@ -17,8 +17,9 @@ SEED_USER_ID = _seed_user_uuid(1)
 TEST_USER_ID = _seed_user_uuid(2)
 
 # public.discover_profiles() walks these (radius_km, max_days) tiers, in this
-# order, stopping at the first tier with a not-yet-passed match. Keep in sync
-# with the latest discover_profiles() migration.
+# order, stopping at the first tier with someone the viewer has not swiped.
+# Chosen/rejected people are still returned. Keep in sync with the latest
+# discover_profiles() migration.
 DISCOVER_TIERS = [
     (0.5, 1),
     (1.0, 1),
@@ -50,6 +51,7 @@ def _auth_user(
     longitude: float,
     hours_since_active: float = 0,
     is_active: bool = True,
+    open_to_chat: bool = False,
 ) -> dict:
     return {
         "id": user_id,
@@ -69,6 +71,7 @@ def _auth_user(
             # seed users are active so Discover has something to show out of
             # the box.
             "is_active": is_active,
+            "open_to_chat": open_to_chat,
         },
     }
 
@@ -97,6 +100,7 @@ TEST_USER = _auth_user(
     latitude=12.9784,
     longitude=77.6408,
     hours_since_active=0,
+    open_to_chat=True,
 )
 
 # Discover-feed tier coverage, all offset north from SEED_USER's location

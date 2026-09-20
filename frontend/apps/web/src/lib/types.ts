@@ -13,9 +13,28 @@ export type ProfileRow = {
   twitter_url: string | null
   last_active_at: string
   is_active: boolean
+  open_to_chat: boolean
+  visible_in_everyone: boolean
   created_at: string
   updated_at: string
 }
+
+export type PoolRow = {
+  id: string
+  name: string
+  join_code: string
+  created_by: string
+  created_at: string
+}
+
+export type PoolMembershipRow = {
+  user_id: string
+  pool_id: string
+  visible: boolean
+  created_at: string
+}
+
+export type MyPool = PoolRow & { visible: boolean }
 
 export type ProfileItemKind = 'photo' | 'text'
 
@@ -26,6 +45,16 @@ export type ProfileItemRow = {
   body: string | null
   photo_url: string | null
   position: number
+  created_at: string
+  updated_at: string
+}
+
+export type PushSubscriptionRow = {
+  id: string
+  user_id: string
+  endpoint: string
+  p256dh: string
+  auth: string
   created_at: string
   updated_at: string
 }

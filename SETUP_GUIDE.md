@@ -27,6 +27,8 @@ After Supabase is up, copy values from [`supabase/.env`](./supabase/.env) (creat
 
 Google login on local: add the OAuth client to `supabase/.env`, source that file, then restart Supabase. Authorized redirect URI is `http://127.0.0.1:54321/auth/v1/callback`. Details: [supabase/SETUP_GUIDE.md — Google login (local)](./supabase/SETUP_GUIDE.md#google-login-local).
 
+Message notifications: copy `VITE_VAPID_PUBLIC_KEY` from [`frontend/.env.example`](./frontend/.env.example) into `frontend/.env` so it matches `VAPID_PUBLIC_KEY` in `supabase/.env`. See [supabase/SETUP_GUIDE.md — Message push notifications](./supabase/SETUP_GUIDE.md#message-push-notifications-web-push).
+
 Local Supabase also exposes MCP at [http://127.0.0.1:54321/mcp](http://127.0.0.1:54321/mcp). Cursor reads [`.cursor/mcp.json`](./.cursor/mcp.json); Claude Code reads [`.mcp.json`](./.mcp.json) at the repo root. See [CONTRIBUTING.md — Agent guidance](./CONTRIBUTING.md#agent-guidance).
 
 ## Verify: login → Hello

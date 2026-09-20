@@ -107,4 +107,14 @@ Meetly signs in through **Supabase Auth → Google**, not the frontend. Put the 
 
 `skip_nonce_check = true` is required for Google on local Auth. Do **not** put the Google client secret in `frontend/.env`.
 
+## Message push notifications (Web Push)
+
+After sign-in the web app asks once for notification permission. New DMs then notify the recipient on Android Chrome even if Meetly is closed. iPhone Chrome only receives these after **Add to Home Screen**.
+
+Local VAPID keys live in [`.env.example`](./.env.example) (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`) and must match `VITE_VAPID_PUBLIC_KEY` in the frontend env. `python setup.py` writes the local pair into `.env` if it is missing. Edge Function secrets are wired in [`config.toml`](./config.toml) (`[edge_runtime.secrets]`).
+
+Apply the `push_subscriptions` migration (`supabase db reset` or `supabase migration up`), restart local Supabase so the function picks up secrets, then copy the public key into `frontend/.env`.
+
+Hosted project: generate a new pair (`npx web-push generate-vapid-keys`), set `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=...`, deploy `push-on-message`, and put the public key in the frontend env. Optional: a Database Webhook on `messages` INSERT to that function (service role JWT) covers sends that did not go through the web client.
+
 Contribution rules: [CONTRIBUTING.md](./CONTRIBUTING.md).

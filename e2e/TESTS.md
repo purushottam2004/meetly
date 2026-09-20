@@ -10,7 +10,7 @@ Credentials: [`tests/helpers/auth.ts`](./tests/helpers/auth.ts) (defaults match 
 
 | File | What it covers |
 | --- | --- |
-| [`tests/smoke.spec.ts`](./tests/smoke.spec.ts) | Homepage loads; unauthenticated users are sent to `/login`. |
+| [`tests/smoke.spec.ts`](./tests/smoke.spec.ts) | Homepage loads; unauthenticated users browse Discover (including the Everyone pool filter), passing someone keeps another card in the feed, **Open to chat** shows next to last-seen on opted-in profiles, and Chats requires a session. |
 | [`tests/login.spec.ts`](./tests/login.spec.ts) | Seeded email/password reaches the home page; a wrong password stays on login with an error. |
 | [`tests/hello.spec.ts`](./tests/hello.spec.ts) | After sign-in, **Hello** calls `/api/v1/hello` and shows authenticated JSON. Needs the backend on `:8080`. |
 

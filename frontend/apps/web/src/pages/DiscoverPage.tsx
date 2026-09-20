@@ -1,18 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { ComposeOverlay } from '../components/ComposeOverlay'
 import { ProfileCard } from '../components/ProfileCard'
 import { IconChat, IconRefresh, IconUsers, IconX } from '../lib/icons'
 import { sendMessage } from '../lib/messages'
+import { fetchDiscoverProfilesFiltered, fetchMyPools } from '../lib/pools'
+import {
+  applyDiscoverSwipe,
+  rankDiscoverProfiles,
+  ranksFromSwipes,
+  type DiscoverSwipeRanks,
+} from '../lib/discoverRank'
 import {
   clearMyPassedSwipes,
-  fetchDiscoverProfiles,
   fetchMyProfile,
+  fetchMySwipes,
   fetchProfileItems,
   recordSwipe,
 } from '../lib/profiles'
-import type { LatLng, ProfileItemRow, ProfileRow, Quote } from '../lib/types'
+import type { LatLng, MyPool, ProfileItemRow, ProfileRow, Quote, SwipeDirection } from '../lib/types'
 import type { PendingCompose } from '../lib/authFlow'
 
 type ComposeState = { profile: ProfileRow; quote: Quote | null }
@@ -28,24 +35,45 @@ export function DiscoverPage() {
   const [flying, setFlying] = useState<'left' | 'right' | null>(null)
   const [fetchedLocation, setFetchedLocation] = useState<LatLng | null>(null)
   const [compose, setCompose] = useState<ComposeState | null>(null)
+  const [myPools, setMyPools] = useState<MyPool[]>([])
+  const [includeEveryone, setIncludeEveryone] = useState(true)
+  const [selectedPoolIds, setSelectedPoolIds] = useState<string[]>([])
+  const [swipeById, setSwipeById] = useState<DiscoverSwipeRanks>({})
+  const swipeByIdRef = useRef(swipeById)
+
+  useEffect(() => {
+    swipeByIdRef.current = swipeById
+  }, [swipeById])
 
   // Only ever set from the fetch below; derive the "no user" case at render
   // time instead of resetting it from an effect.
   const myLocation = user ? fetchedLocation : null
 
   async function loadQueue() {
-    const profiles = await fetchDiscoverProfiles(user?.id ?? null)
-    setQueue(profiles)
+    const profiles = await fetchDiscoverProfilesFiltered(user?.id ?? null, {
+      includeEveryone,
+      poolIds: selectedPoolIds,
+    })
+    const ranks = user ? ranksFromSwipes(await fetchMySwipes(user.id)) : swipeByIdRef.current
+    setSwipeById(ranks)
+    setQueue(rankDiscoverProfiles(profiles, ranks))
     return profiles
   }
+
+  useEffect(() => {
+    if (!user) return
+    void fetchMyPools(user.id).then(setMyPools)
+  }, [user, routerLocation.pathname])
 
   // Wait for the session to settle: fetching while auth is still loading sends
   // viewer_id = null, and an anonymous feed has no one to exclude — so you'd
   // get your own card back.
   useEffect(() => {
     if (loading) return
-    void fetchDiscoverProfiles(user?.id ?? null).then(setQueue)
-  }, [loading, user?.id])
+    void loadQueue()
+    // loadQueue reads the latest filter/auth values; listing those as deps is enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user?.id, includeEveryone, selectedPoolIds])
 
   useEffect(() => {
     if (!user) return
@@ -81,12 +109,19 @@ export function DiscoverPage() {
     navigate('/login', { state: { from: { pathname: '/' }, pendingCompose } })
   }
 
+  function demote(profileId: string, direction: SwipeDirection) {
+    const next = applyDiscoverSwipe(queue ?? [], swipeByIdRef.current, profileId, direction)
+    setSwipeById(next.ranks)
+    setQueue(next.profiles)
+  }
+
   function pass() {
     if (!top) return
+    const profileId = top.id
     setFlying('left')
-    if (user) void recordSwipe(user.id, top.id, 'left').catch(console.error)
+    if (user) void recordSwipe(user.id, profileId, 'left').catch(console.error)
     setTimeout(() => {
-      setQueue((q) => (q ? q.slice(1) : q))
+      demote(profileId, 'left')
       setFlying(null)
     }, 220)
   }
@@ -113,25 +148,69 @@ export function DiscoverPage() {
     if (!user || !compose) return
     await sendMessage(user.id, compose.profile.id, text, compose.quote)
     await recordSwipe(user.id, compose.profile.id, 'right')
+    const profileId = compose.profile.id
     setCompose(null)
     setFlying('right')
     setTimeout(() => {
-      setQueue((q) => (q ? q.filter((p) => p.id !== compose.profile.id) : q))
+      demote(profileId, 'right')
       setFlying(null)
     }, 220)
   }
 
   async function resetPassed() {
-    if (user) await clearMyPassedSwipes(user.id).catch(console.error)
+    if (user) {
+      await clearMyPassedSwipes(user.id).catch(console.error)
+    } else {
+      const next = { ...swipeByIdRef.current }
+      for (const id of Object.keys(next)) {
+        if (next[id] === 'left') delete next[id]
+      }
+      swipeByIdRef.current = next
+      setSwipeById(next)
+    }
     await loadQueue()
   }
 
+  function togglePoolChip(poolId: string) {
+    setSelectedPoolIds((current) =>
+      current.includes(poolId) ? current.filter((id) => id !== poolId) : [...current, poolId],
+    )
+  }
+
+  const filterBar = (
+    <div className="discover-filters" role="tablist" aria-label="Pool filters">
+      <button
+        type="button"
+        className={`discover-filter-chip ${includeEveryone ? 'on' : ''}`}
+        onClick={() => setIncludeEveryone((value) => !value)}
+      >
+        Everyone
+      </button>
+      {(user ? myPools : []).map((pool) => (
+        <button
+          type="button"
+          key={pool.id}
+          className={`discover-filter-chip ${selectedPoolIds.includes(pool.id) ? 'on' : ''}`}
+          onClick={() => togglePoolChip(pool.id)}
+        >
+          {pool.name}
+        </button>
+      ))}
+    </div>
+  )
+
   if (queue === null) {
-    return <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
+    return (
+      <div className="screen active" id="screen-discover">
+        {filterBar}
+        <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
+      </div>
+    )
   }
 
   return (
     <div className="screen active" id="screen-discover">
+      {filterBar}
       {!top && (
         <div className="empty-state show">
           <div className="circle">
@@ -158,7 +237,7 @@ export function DiscoverPage() {
 
       {top && (
         <div className="floating-actions">
-          <div className="float-btn pass" onClick={pass}>
+          <div className="float-btn pass" role="button" aria-label="Pass" onClick={pass}>
             <IconX />
           </div>
           <div className="float-btn message" onClick={openCompose}>

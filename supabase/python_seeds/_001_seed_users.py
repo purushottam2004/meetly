@@ -46,6 +46,7 @@ def seed_users():
                 "longitude": profile.get("longitude"),
                 "last_active_at": last_active_at,
                 "is_active": profile.get("is_active"),
+                "open_to_chat": profile.get("open_to_chat"),
             }.items()
             if value is not None
         }

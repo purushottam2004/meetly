@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -156,6 +157,18 @@ def write_env(status: dict[str, str]) -> None:
     upsert_env(ENV_FILE, "SUPABASE_URL", api_url)
     upsert_env(ENV_FILE, "SUPABASE_PUBLISHABLE_KEY", publishable)
     upsert_env(ENV_FILE, "SUPABASE_SECRET_KEY", secret)
+    load_dotenv(ENV_FILE, override=True)
+    if not os.getenv("VAPID_PUBLIC_KEY") or not os.getenv("VAPID_PRIVATE_KEY"):
+        upsert_env(
+            ENV_FILE,
+            "VAPID_PUBLIC_KEY",
+            "BNfCrI6Bp8BslFsupAnghRI2eGPaUxq7Pb21S30zptFqbWTDcmWLA2pQ9JSneluLUJ_i1tRFIPyIqjfxK5faIS4",
+        )
+        upsert_env(
+            ENV_FILE,
+            "VAPID_PRIVATE_KEY",
+            "5YbZyrdc_dZoSaA080LFZRMX0exM1zNjXjSwMN_SvcM",
+        )
     logger.info("Wrote .env")
 
 

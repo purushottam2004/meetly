@@ -2,17 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { IconArrowLeft, IconCamera, IconLightbulb, IconSend } from '../lib/icons'
+import { shouldSendOnEnter } from '../lib/keyboard'
 import { fetchThread, markThreadSeen, sendMessage, subscribeToThread } from '../lib/messages'
 import { fetchMyProfile } from '../lib/profiles'
 import type { MessageRow, ProfileRow } from '../lib/types'
 
 const TIPS = [
-  'Ask for their social media to help validate their profile before meeting up',
-  'Suggest a mystery room or a small adventure activity — shared challenges make friendships stick',
-  'Bring up a specific topic you both care about instead of generic small talk',
+  'Ask for social media for verification',
+  'A mystery room, or shared adventure activity might help making friendships',
+  'Find common interests using profiles.',
   'Suggest meeting in a public place first, like a cafe near you both',
-  "Ask what got them into one of their listed interests — it's an easy conversation opener",
-  'Keep the first meetup short and casual — grabbing coffee works better than a long plan',
+  "Ask what got them into one of their listed interests, it's an easy conversation opener",
 ]
 
 export function ChatDetailPage() {
@@ -133,8 +133,9 @@ export function ChatDetailPage() {
             rows={1}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            enterKeyHint="enter"
             onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
+              if (shouldSendOnEnter(event)) {
                 event.preventDefault()
                 void handleSend()
               }

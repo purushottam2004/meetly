@@ -35,6 +35,8 @@ def test_seed_users_list_is_the_named_dicts():
         assert user["password"] == DEFAULT_PASSWORD
         assert user["profile"]["username"]
         assert user["profile"]["display_name"]
+    assert TEST_USER["profile"]["open_to_chat"] is True
+    assert SEED_USER["profile"]["open_to_chat"] is False
 
 
 def test_discover_tier_users_cover_every_tier_with_unique_uuids():

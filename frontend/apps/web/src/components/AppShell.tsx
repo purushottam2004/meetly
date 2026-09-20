@@ -13,6 +13,7 @@ import {
   saveMyLocation,
   touchLastActive,
 } from '../lib/profiles'
+import { enableMessagePush } from '../lib/push'
 
 /**
  * Persistent header + scroll viewport shared by every screen, matching the
@@ -36,6 +37,7 @@ export function AppShell() {
     if (!user) return
     void touchLastActive(user.id)
     void ensureDisplayNameFromAuth(user.id, user.user_metadata)
+    void enableMessagePush()
   }, [user])
 
   // Re-read on navigation so a freshly uploaded photo / edited field updates
@@ -121,12 +123,6 @@ export function AppShell() {
             </div>
             {ringPct < 100 && <span className="avatar-completeness-pct">{ringPct}%</span>}
           </div>
-          {ringPct < 100 && (
-            <div className="avatar-completeness-hint">
-              <strong>Tap to edit profile</strong>
-              Complete profiles are more likely to network
-            </div>
-          )}
         </div>
         <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           meetly

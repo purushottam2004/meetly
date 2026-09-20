@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { SocialRow } from '../components/SocialRow'
+import {
+  createdPoolCount,
+  checkPoolName,
+  createPool,
+  fetchMyPools,
+  joinPool,
+  MAX_CUSTOM_POOLS,
+  setEveryoneVisible,
+  setPoolVisible,
+} from '../lib/pools'
 import {
   addProfileItem,
   deleteProfileItem,
@@ -9,11 +20,12 @@ import {
   reorderProfileItems,
   saveMyActiveState,
   saveMyAvatar,
+  saveMyOpenToChat,
   saveMyProfileHeader,
   updateProfileItem,
   uploadProfilePhoto,
 } from '../lib/profiles'
-import type { ProfileItemRow, ProfileRow } from '../lib/types'
+import type { MyPool, ProfileItemRow, ProfileRow } from '../lib/types'
 import {
   IconArrowLeft,
   IconCamera,
@@ -38,11 +50,21 @@ export function ProfilePage() {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [pendingPhotoItemId, setPendingPhotoItemId] = useState<string | null>(null)
+  const [pools, setPools] = useState<MyPool[]>([])
+  const [joinCode, setJoinCode] = useState('')
+  const [newPoolName, setNewPoolName] = useState('')
+  const [poolError, setPoolError] = useState<string | null>(null)
+  const [poolBusy, setPoolBusy] = useState(false)
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>([])
+  const [nameAvailable, setNameAvailable] = useState<boolean | null>(null)
+  const nameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const nameCheckGen = useRef(0)
 
   useEffect(() => {
     if (!user) return
     void fetchMyProfile(user.id).then(setProfile)
     void fetchProfileItems(user.id).then(setItems)
+    void fetchMyPools(user.id).then(setPools)
   }, [user])
 
   async function saveHeader(fields: {
@@ -137,6 +159,114 @@ export function ProfilePage() {
     await saveMyActiveState(user.id, nextActive)
   }
 
+  async function toggleOpenToChat() {
+    if (!user || !profile) return
+    const next = !profile.open_to_chat
+    setProfile({ ...profile, open_to_chat: next })
+    await saveMyOpenToChat(user.id, next)
+  }
+
+  async function reloadPools() {
+    if (!user) return
+    setPools(await fetchMyPools(user.id))
+  }
+
+  async function toggleEveryoneVisible() {
+    if (!user || !profile) return
+    const next = !profile.visible_in_everyone
+    setProfile({ ...profile, visible_in_everyone: next })
+    await setEveryoneVisible(user.id, next)
+  }
+
+  async function togglePoolMembershipVisible(pool: MyPool) {
+    if (!user) return
+    const next = !pool.visible
+    setPools((current) => current.map((row) => (row.id === pool.id ? { ...row, visible: next } : row)))
+    await setPoolVisible(user.id, pool.id, next)
+  }
+
+  async function handleJoinPool() {
+    if (!user) return
+    const code = joinCode.trim().toUpperCase().replace(/\s+/g, '')
+    const already = pools.some(
+      (pool) =>
+        pool.join_code === code || pool.name.replace(/\s+/g, '') === code,
+    )
+    if (already) {
+      setJoinCode('')
+      setPoolError(null)
+      return
+    }
+    setPoolBusy(true)
+    setPoolError(null)
+    try {
+      await joinPool(code)
+      setJoinCode('')
+      await reloadPools()
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : ''
+      if (/at most 3/i.test(raw)) setPoolError(raw)
+      else setPoolError('Pool does not exist')
+    } finally {
+      setPoolBusy(false)
+    }
+  }
+
+  async function handleCreatePool(name = newPoolName) {
+    if (!user) return
+    const pooledName = name.trim().toUpperCase()
+    nameCheckGen.current += 1
+    if (nameCheckTimer.current) clearTimeout(nameCheckTimer.current)
+    setPoolBusy(true)
+    setPoolError(null)
+    setNameSuggestions([])
+    try {
+      const check = await checkPoolName(pooledName)
+      if (!check.available) {
+        setNameAvailable(false)
+        setNameSuggestions(check.suggestions)
+        setPoolError('That name is taken')
+        return
+      }
+      await createPool(pooledName)
+      setNewPoolName('')
+      setNameSuggestions([])
+      setNameAvailable(true)
+      await reloadPools()
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : ''
+      if (/taken/i.test(raw)) {
+        const check = await checkPoolName(pooledName).catch(() => null)
+        setNameAvailable(false)
+        setNameSuggestions(check?.suggestions ?? [])
+        setPoolError('That name is taken')
+        return
+      }
+      setPoolError(raw || 'Could not create pool')
+    } finally {
+      setPoolBusy(false)
+    }
+  }
+
+  function onNewPoolNameChange(value: string) {
+    const next = value.toUpperCase()
+    setNewPoolName(next)
+    setPoolError(null)
+    setNameSuggestions([])
+    setNameAvailable(null)
+    if (nameCheckTimer.current) clearTimeout(nameCheckTimer.current)
+    const trimmed = next.trim()
+    if (!trimmed) return
+    const gen = ++nameCheckGen.current
+    nameCheckTimer.current = setTimeout(() => {
+      void checkPoolName(trimmed).then((check) => {
+        if (gen !== nameCheckGen.current) return
+        setNameAvailable(check.available)
+        setNameSuggestions(check.available ? [] : check.suggestions)
+      })
+    }, 350)
+  }
+
   if (!profile) {
     return <p style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Loading…</p>
   }
@@ -164,14 +294,17 @@ export function ProfilePage() {
             onChangePhoto={() => avatarInputRef.current?.click()}
             onCancel={() => setEditingHeader(false)}
             onSave={saveHeader}
+            onToggleOpenToChat={() => void toggleOpenToChat()}
           />
         ) : (
           <div className="profile-header-card">
             <div className="photo-block first photo-variant-0">
               {profile.avatar_url && <img src={profile.avatar_url} alt="" />}
+              <OpenToChatToggle on={profile.open_to_chat} onToggle={() => void toggleOpenToChat()} />
               <div className="name-overlay">
                 <span className="name">{profile.display_name || 'You'}</span>
                 <div className="role">{profile.headline || 'Add your role or headline'}</div>
+                <SocialRow profile={profile} lastActiveAt={profile.last_active_at} showOpenToChat={false} />
               </div>
             </div>
             <div className="header-edit-btn" onClick={() => setEditingHeader(true)}>
@@ -285,8 +418,91 @@ export function ProfilePage() {
         </div>
       </div>
 
-      <div className="settings-section">
-        <div className="sec-title">Settings</div>
+      <div className="settings-section pool-block">
+        <div className="pool-chip-row">
+          <button
+            type="button"
+            className={`pool-chip ${profile.visible_in_everyone ? 'on' : ''}`}
+            onClick={() => void toggleEveryoneVisible()}
+          >
+            Everyone
+          </button>
+          {pools.map((pool) => (
+            <button
+              type="button"
+              key={pool.id}
+              className={`pool-chip ${pool.visible ? 'on' : ''}`}
+              onClick={() => void togglePoolMembershipVisible(pool)}
+            >
+              {pool.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="pool-line">
+          <span>Join pool</span>
+          <input
+            type="text"
+            value={joinCode}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="Code"
+            onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void handleJoinPool()
+            }}
+          />
+          <button type="button" className="pool-action-btn" disabled={poolBusy} onClick={() => void handleJoinPool()}>
+            Join
+          </button>
+        </div>
+
+        {user && createdPoolCount(user.id, pools) < MAX_CUSTOM_POOLS && pools.length < MAX_CUSTOM_POOLS && (
+          <>
+            <div className="pool-line">
+              <span>Create pool</span>
+              <input
+                type="text"
+                value={newPoolName}
+                maxLength={48}
+                placeholder="Name"
+                onChange={(event) => onNewPoolNameChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void handleCreatePool()
+                }}
+              />
+              <button
+                type="button"
+                className="pool-action-btn"
+                disabled={poolBusy}
+                onClick={() => void handleCreatePool()}
+              >
+                Create
+              </button>
+            </div>
+            {nameAvailable === false && nameSuggestions.length > 0 && (
+              <div className="pool-suggest-row">
+                {nameSuggestions.map((suggestion) => (
+                  <button
+                    type="button"
+                    key={suggestion}
+                    className="pool-suggest"
+                    onClick={() => {
+                      setNewPoolName(suggestion)
+                      setNameAvailable(true)
+                      setNameSuggestions([])
+                      void handleCreatePool(suggestion)
+                    }}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        {poolError && <p className="pool-error">{poolError}</p>}
         <div className="settings-row danger" onClick={() => void signOut().then(() => navigate('/'))}>
           Log out
           <span className="chev">
@@ -298,12 +514,29 @@ export function ProfilePage() {
   )
 }
 
+function OpenToChatToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      className="open-to-chat-control"
+      aria-pressed={on}
+      onClick={onToggle}
+    >
+      <span>Open to chat</span>
+      <span className={`toggle-switch ${on ? 'on' : ''}`}>
+        <span className="toggle-thumb" />
+      </span>
+    </button>
+  )
+}
+
 function ProfileHeaderEditor({
   profile,
   uploadingAvatar,
   onChangePhoto,
   onCancel,
   onSave,
+  onToggleOpenToChat,
 }: {
   profile: ProfileRow
   uploadingAvatar: boolean
@@ -317,6 +550,7 @@ function ProfileHeaderEditor({
     instagram_url: string
     twitter_url: string
   }) => void
+  onToggleOpenToChat: () => void
 }) {
   const [displayName, setDisplayName] = useState(profile.display_name ?? '')
   const [headline, setHeadline] = useState(profile.headline ?? '')
@@ -329,6 +563,7 @@ function ProfileHeaderEditor({
     <div className="profile-header-card">
       <div className="photo-block first header-photo-edit photo-variant-0">
         {profile.avatar_url && <img src={profile.avatar_url} alt="" />}
+        <OpenToChatToggle on={profile.open_to_chat} onToggle={onToggleOpenToChat} />
         <div className="change-photo-btn" onClick={onChangePhoto}>
           <IconCamera /> {uploadingAvatar ? 'Uploading…' : 'Change photo'}
         </div>
