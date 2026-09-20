@@ -450,15 +450,10 @@ export function createLocalSupabase(): SupabaseClient {
         if (db.pools.some((p) => p.name.trim().toLowerCase() === trimmed.toLowerCase())) {
           return Promise.resolve(fail('That name is taken'))
         }
-        const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-        let joinCode = ''
-        do {
-          joinCode = Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('')
-        } while (db.pools.some((p) => p.join_code === joinCode))
         const pool: PoolRow = {
           id: crypto.randomUUID(),
           name: trimmed,
-          join_code: joinCode,
+          join_code: trimmed,
           created_by: sessionUserId,
           created_at: new Date().toISOString(),
         }
@@ -477,7 +472,10 @@ export function createLocalSupabase(): SupabaseClient {
         if (!sessionUserId) return Promise.resolve(fail('Not authenticated'))
         const code = (args.p_code ?? '').trim().toUpperCase().replace(/\s+/g, '')
         if (!code) return Promise.resolve(fail('Pool does not exist'))
-        const found = db.pools.find((p) => p.join_code === code)
+        const compact = (value: string) => value.trim().toUpperCase().replace(/\s+/g, '')
+        const found = db.pools.find(
+          (p) => compact(p.join_code) === code || compact(p.name) === code,
+        )
         if (!found) return Promise.resolve(fail('Pool does not exist'))
         const already = db.pool_memberships.some((m) => m.user_id === sessionUserId && m.pool_id === found.id)
         if (!already) {

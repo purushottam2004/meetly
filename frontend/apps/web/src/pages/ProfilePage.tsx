@@ -445,7 +445,7 @@ export function ProfilePage() {
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
-            placeholder="Code"
+            placeholder="Name"
             onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
             onKeyDown={(event) => {
               if (event.key === 'Enter') void handleJoinPool()

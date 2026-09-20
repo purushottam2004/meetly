@@ -24,7 +24,7 @@ def _publishable_key() -> str:
 
 def test_everyone_default_and_pool_union_filter(admin_client):
     pool_id = str(uuid.uuid4())
-    code = uuid.uuid4().hex[:6].upper()
+    pool_name = f"CAMPUS{uuid.uuid4().hex[:8].upper()}"
 
     hidden = admin_client.auth.admin.create_user(
         {
@@ -54,8 +54,8 @@ def test_everyone_default_and_pool_union_filter(admin_client):
         admin_client.table("pools").insert(
             {
                 "id": pool_id,
-                "name": "Campus",
-                "join_code": code,
+                "name": pool_name,
+                "join_code": pool_name,
                 "created_by": member_id,
             }
         ).execute()
@@ -139,13 +139,13 @@ def test_shared_pools_returns_visible_overlap_only(admin_client):
                 {
                     "id": pool_id,
                     "name": f"SHARED{suffix}",
-                    "join_code": suffix[:6],
+                    "join_code": f"SHARED{suffix}",
                     "created_by": viewer.id,
                 },
                 {
                     "id": hidden_pool_id,
                     "name": f"HIDDEN{suffix}",
-                    "join_code": suffix[-6:],
+                    "join_code": f"HIDDEN{suffix}",
                     "created_by": viewer.id,
                 },
             ]
@@ -171,3 +171,46 @@ def test_shared_pools_returns_visible_overlap_only(admin_client):
         admin_client.table("pools").delete().eq("id", hidden_pool_id).execute()
         admin_client.auth.admin.delete_user(viewer.id)
         admin_client.auth.admin.delete_user(other.id)
+
+
+def _rpc_row(data):
+    if isinstance(data, list):
+        return data[0]
+    return data
+
+
+def test_create_pool_name_is_the_join_code(admin_client):
+    suffix = uuid.uuid4().hex[:8].upper()
+    name = f"POOL {suffix}"
+    email = f"creator_{suffix.lower()}@example.com"
+    joiner_email = f"joiner_{suffix.lower()}@example.com"
+
+    creator = admin_client.auth.admin.create_user(
+        {"email": email, "password": PASSWORD, "email_confirm": True}
+    ).user
+    joiner = admin_client.auth.admin.create_user(
+        {"email": joiner_email, "password": PASSWORD, "email_confirm": True}
+    ).user
+
+    try:
+        creator_client = create_client(SUPABASE_URL, _publishable_key())
+        creator_client.auth.sign_in_with_password({"email": email, "password": PASSWORD})
+        created = _rpc_row(
+            creator_client.rpc("create_pool", {"p_name": name}).execute().data
+        )
+        assert created["name"] == name
+        assert created["join_code"] == name
+
+        joiner_client = create_client(SUPABASE_URL, _publishable_key())
+        joiner_client.auth.sign_in_with_password(
+            {"email": joiner_email, "password": PASSWORD}
+        )
+        joined = _rpc_row(
+            joiner_client.rpc("join_pool", {"p_code": name.replace(" ", "")}).execute().data
+        )
+        assert joined["id"] == created["id"]
+        assert joined["join_code"] == joined["name"]
+    finally:
+        admin_client.table("pools").delete().eq("name", name).execute()
+        admin_client.auth.admin.delete_user(creator.id)
+        admin_client.auth.admin.delete_user(joiner.id)
